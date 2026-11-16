@@ -1,0 +1,10 @@
+OneShot verify — results/preflight-0x52a7ed336eec9580bb9cc87e5bb8d5a35b844029.json
+Record: 0x37a2c018e0e2a27cb9f887f42509afffac7f166a6e9172903c07cae6e6d744ed (run #5, 0x52a7ed336eec9580bb9cc87e5bb8d5a35b844029 on ethereum, 2026-11-16T17:18:21.255Z)
+
+[PASS] record-hash: Canonical SHA-256 of the record matches the stored hash (0x37a2c018e0e2a27cb9f887f42509afffac7f166a6e9172903c07cae6e6d744ed).
+[PASS] anchor: Anchor tx 0x8f0ab3d37892cf6d1abf42e09503ff50ec2e1a79014dac5221a00b46cb392d98 is on Sepolia (block 12148753), calldata is exactly the record hash, receipt succeeded.
+[PASS] signals: 4 signal(s) re-fetched from the Telegraph node, all verified, all results match the record.
+[PASS] verdict: Re-derived verdict matches the record: REJECT / REJECT.
+[PASS] honeypot-freshness: honeypot.is still agrees with the record (reject).
+
+PASS — the execution record is proven.

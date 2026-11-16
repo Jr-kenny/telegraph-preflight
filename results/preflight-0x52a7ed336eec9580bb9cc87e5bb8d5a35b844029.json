@@ -1,0 +1,478 @@
+{
+  "tool": "oneshot",
+  "tool_version": "2.0.0",
+  "network": "eip155:11155111",
+  "network_label": "Sepolia testnet",
+  "chain": "ethereum",
+  "token": "0x52a7ed336eec9580bb9cc87e5bb8d5a35b844029",
+  "treasury": "0x3E0A40c927a4dA19e6eceCa432adb6ADf36A4046",
+  "handle": null,
+  "wallet": "0x3E0A40c927a4dA19e6eceCa432adb6ADf36A4046",
+  "run_at_utc": "2026-11-16T17:18:21.255Z",
+  "legs": [
+    {
+      "intent": "WASH_TRADING_DETECTION_GENERAL",
+      "params": {
+        "subject": "0x52a7ed336eec9580bb9cc87e5bb8d5a35b844029 on ethereum"
+      },
+      "judgement": {
+        "verdict": "review",
+        "reason": "Wash-trading check was inconclusive. Not a clean pass."
+      },
+      "cost_usd": 0.01,
+      "duration_ms": 21262,
+      "signal_hash": "0x351e48eaadd207181f5f2c9187f7a7002af902427631398851ceaf0af8daf845",
+      "signal_verified": true,
+      "result": {
+        "subject": "0x52a7ed336eec9580bb9cc87e5bb8d5a35b844029",
+        "verdict": "inconclusive",
+        "wash_volume_pct": null,
+        "signals": null,
+        "summary": "No DEX market found for 0x52a7ed336eec9580bb9cc87e5bb8d5a35b844029."
+      },
+      "result_source": "signal",
+      "field_status": {
+        "subject": "ok",
+        "verdict": "ok",
+        "wash_volume_pct": "missing",
+        "signals": "missing",
+        "summary": "ok"
+      },
+      "result_shape": "intent",
+      "miner": "PREFLIGHT Infrastructure Signals",
+      "receipt_present": true
+    },
+    {
+      "intent": "SECURITY_REVIEW_GENERAL",
+      "params": {
+        "target": "0x52a7ed336eec9580bb9cc87e5bb8d5a35b844029"
+      },
+      "judgement": {
+        "verdict": "review",
+        "reason": "Security review said Secure, but vulnerability_count and issues came back missing — the review was thin (the miner scanned the address string, not contract code). This is not a full audit."
+      },
+      "cost_usd": 0.01,
+      "duration_ms": 19470,
+      "signal_hash": "0xedaba21ca7eee59042a21b1d490dedae6826e11f707225b413941cb6c8f257ae",
+      "signal_verified": true,
+      "result": {
+        "verdict": "Secure",
+        "vulnerability_count": null,
+        "issues": null,
+        "summary": "Verdict: secure. No injection, eval, shell, deserialization, TLS, path, SSRF, XSS or hardcoded-secret patterns in 1 line scanned."
+      },
+      "result_source": "signal",
+      "field_status": {
+        "verdict": "ok",
+        "vulnerability_count": "missing",
+        "issues": "missing",
+        "summary": "ok"
+      },
+      "result_shape": "intent",
+      "miner": "PR Guard Sentinel (code and dependency security review)",
+      "receipt_present": true
+    },
+    {
+      "intent": "LIQUIDITY_DEPTH_VERIFY_GENERAL",
+      "params": {
+        "pool": "HNP-WETH on ethereum",
+        "chain": "ethereum"
+      },
+      "judgement": {
+        "verdict": "review",
+        "reason": "Liquidity figure $1,182,265,866.03 conflicts with the wash leg, which found no DEX market for this token — the figure is not trusted."
+      },
+      "cost_usd": 0.01,
+      "duration_ms": 26576,
+      "signal_hash": "0xbce96eae0c3aacf2238d368fe2be76474978e31ac20697a219f05c60edefe71a",
+      "signal_verified": true,
+      "result": {
+        "liquidity_usd": 1182265866.03
+      },
+      "result_source": "signal",
+      "field_status": {
+        "liquidity_usd": "ok"
+      },
+      "result_shape": "intent",
+      "miner": "ChainSight — Universal Intelligence & Data Oracle",
+      "receipt_present": true,
+      "consistency_flag": "conflicts with wash leg (no DEX market found)",
+      "cross_check": {
+        "source": "dexscreener",
+        "dex_max_usd": 0,
+        "dex_pairs_on_chain": 0,
+        "telegraph_usd": 1182265866.03,
+        "outcome": "conflicting-no-market"
+      }
+    },
+    {
+      "intent": "SANCTIONS_SCREENING_MATCH_GENERAL",
+      "params": {
+        "name": "0x3E0A40c927a4dA19e6eceCa432adb6ADf36A4046"
+      },
+      "judgement": {
+        "verdict": "clean",
+        "reason": "No sanctions match (score 0)."
+      },
+      "cost_usd": 0.01,
+      "duration_ms": 18182,
+      "signal_hash": "0xad510640ba6fd8177990fedf6049a0579bce8518dee70f8c9379df304b55ca53",
+      "signal_verified": true,
+      "result": {
+        "name": "0x3e0a40c927a4da19e6ececa432adb6adf36a4046",
+        "matched": false,
+        "matches": null,
+        "lists": [
+          "US OFAC SDN and non-SDN Consolidated lists (published 2026-11-13)",
+          "UN Security Council Consolidated List (published 2026-11-15)",
+          "EU Consolidated Financial Sanctions List (published 2026-10-23)",
+          "UK Sanctions List (published 2026-11-12)"
+        ],
+        "match_score": 0
+      },
+      "result_source": "signal",
+      "field_status": {
+        "name": "ok",
+        "matched": "ok",
+        "matches": "missing",
+        "lists": "ok",
+        "match_score": "ok"
+      },
+      "result_shape": "intent",
+      "miner": "Counterproof Sanctions Screener",
+      "receipt_present": true
+    },
+    {
+      "intent": "HONEYPOT_SELL_SIMULATION",
+      "source": "honeypot.is",
+      "judgement": {
+        "verdict": "reject",
+        "reason": "Sell simulation failed (execution reverted: \"revert: HP: BUY_FAILED\") — the token could not be proven sellable."
+      },
+      "cost_usd": 0,
+      "duration_ms": 806,
+      "signal_hash": null,
+      "signal_verified": null,
+      "result": {
+        "honeypotResult": null,
+        "simulationResult": null,
+        "simulationSuccess": false,
+        "simulationError": "execution reverted: \"revert: HP: BUY_FAILED\""
+      },
+      "raw_response": {
+        "token": {
+          "name": "HoneyPot",
+          "symbol": "HNP",
+          "decimals": 18,
+          "address": "0x52a7ed336EEc9580bB9Cc87e5bb8d5a35b844029",
+          "totalHolders": 4
+        },
+        "withToken": {
+          "name": "Wrapped Ether",
+          "symbol": "WETH",
+          "decimals": 18,
+          "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+          "totalHolders": 3330618
+        },
+        "summary": {
+          "risk": "unknown",
+          "flags": [
+            {
+              "flag": "closed_source",
+              "description": "The source code is not available, allowing for hidden functionality.",
+              "severity": "high",
+              "severityIndex": 16
+            }
+          ]
+        },
+        "simulationSuccess": false,
+        "simulationError": "execution reverted: \"revert: HP: BUY_FAILED\"",
+        "flags": [],
+        "contractCode": {
+          "openSource": false,
+          "rootOpenSource": false,
+          "isProxy": false,
+          "hasProxyCalls": false
+        },
+        "chain": {
+          "id": "1",
+          "name": "Ethereum",
+          "shortName": "eth",
+          "currency": "ETH"
+        },
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "pair": {
+          "pair": {
+            "name": "Uniswap V3: HNP-WETH",
+            "address": "0xAE8e27fC49CB359e84F3395d559bA9442613c588",
+            "token0": "0x52a7ed336EEc9580bB9Cc87e5bb8d5a35b844029",
+            "token1": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+            "type": "UniswapV3"
+          },
+          "chainId": "1",
+          "reserves0": "2",
+          "reserves1": "2",
+          "liquidity": 0,
+          "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+          "createdAtTimestamp": "1686681059",
+          "creationTxHash": "0xca5208113bca2b7f76a7b04572cf2cd9a57f54d85c9f97189388a1997d817678"
+        },
+        "pairAddress": "0xAE8e27fC49CB359e84F3395d559bA9442613c588"
+      }
+    }
+  ],
+  "receipts_returned": 4,
+  "total_cost_usd": 0.04,
+  "decision": {
+    "memo": "REJECT",
+    "preflight": "REJECT",
+    "notes": [
+      "Rejecting leg(s): HONEYPOT_SELL_SIMULATION.",
+      "Review leg(s): WASH_TRADING_DETECTION_GENERAL, SECURITY_REVIEW_GENERAL, LIQUIDITY_DEPTH_VERIFY_GENERAL.",
+      "Audit leg is thin: SECURITY_REVIEW on a bare address is not a full Solidity audit. Do not list on this leg alone."
+    ]
+  },
+  "execution": {
+    "record": {
+      "tool": "oneshot",
+      "tool_version": "2.0.0",
+      "chain": "ethereum",
+      "token": "0x52a7ed336eec9580bb9cc87e5bb8d5a35b844029",
+      "treasury": "0x3E0A40c927a4dA19e6eceCa432adb6ADf36A4046",
+      "wallet": "0x3E0A40c927a4dA19e6eceCa432adb6ADf36A4046",
+      "run_seq": 5,
+      "run_at_utc": "2026-11-16T17:18:21.255Z",
+      "legs": [
+        {
+          "intent": "WASH_TRADING_DETECTION_GENERAL",
+          "params": {
+            "subject": "0x52a7ed336eec9580bb9cc87e5bb8d5a35b844029 on ethereum"
+          },
+          "judgement": {
+            "verdict": "review",
+            "reason": "Wash-trading check was inconclusive. Not a clean pass."
+          },
+          "cost_usd": 0.01,
+          "duration_ms": 21262,
+          "signal_hash": "0x351e48eaadd207181f5f2c9187f7a7002af902427631398851ceaf0af8daf845",
+          "signal_verified": true,
+          "result": {
+            "subject": "0x52a7ed336eec9580bb9cc87e5bb8d5a35b844029",
+            "verdict": "inconclusive",
+            "wash_volume_pct": null,
+            "signals": null,
+            "summary": "No DEX market found for 0x52a7ed336eec9580bb9cc87e5bb8d5a35b844029."
+          },
+          "result_source": "signal",
+          "field_status": {
+            "subject": "ok",
+            "verdict": "ok",
+            "wash_volume_pct": "missing",
+            "signals": "missing",
+            "summary": "ok"
+          },
+          "result_shape": "intent",
+          "miner": "PREFLIGHT Infrastructure Signals",
+          "receipt_present": true
+        },
+        {
+          "intent": "SECURITY_REVIEW_GENERAL",
+          "params": {
+            "target": "0x52a7ed336eec9580bb9cc87e5bb8d5a35b844029"
+          },
+          "judgement": {
+            "verdict": "review",
+            "reason": "Security review said Secure, but vulnerability_count and issues came back missing — the review was thin (the miner scanned the address string, not contract code). This is not a full audit."
+          },
+          "cost_usd": 0.01,
+          "duration_ms": 19470,
+          "signal_hash": "0xedaba21ca7eee59042a21b1d490dedae6826e11f707225b413941cb6c8f257ae",
+          "signal_verified": true,
+          "result": {
+            "verdict": "Secure",
+            "vulnerability_count": null,
+            "issues": null,
+            "summary": "Verdict: secure. No injection, eval, shell, deserialization, TLS, path, SSRF, XSS or hardcoded-secret patterns in 1 line scanned."
+          },
+          "result_source": "signal",
+          "field_status": {
+            "verdict": "ok",
+            "vulnerability_count": "missing",
+            "issues": "missing",
+            "summary": "ok"
+          },
+          "result_shape": "intent",
+          "miner": "PR Guard Sentinel (code and dependency security review)",
+          "receipt_present": true
+        },
+        {
+          "intent": "LIQUIDITY_DEPTH_VERIFY_GENERAL",
+          "params": {
+            "pool": "HNP-WETH on ethereum",
+            "chain": "ethereum"
+          },
+          "judgement": {
+            "verdict": "review",
+            "reason": "Liquidity figure $1,182,265,866.03 conflicts with the wash leg, which found no DEX market for this token — the figure is not trusted."
+          },
+          "cost_usd": 0.01,
+          "duration_ms": 26576,
+          "signal_hash": "0xbce96eae0c3aacf2238d368fe2be76474978e31ac20697a219f05c60edefe71a",
+          "signal_verified": true,
+          "result": {
+            "liquidity_usd": 1182265866.03
+          },
+          "result_source": "signal",
+          "field_status": {
+            "liquidity_usd": "ok"
+          },
+          "result_shape": "intent",
+          "miner": "ChainSight — Universal Intelligence & Data Oracle",
+          "receipt_present": true,
+          "consistency_flag": "conflicts with wash leg (no DEX market found)",
+          "cross_check": {
+            "source": "dexscreener",
+            "dex_max_usd": 0,
+            "dex_pairs_on_chain": 0,
+            "telegraph_usd": 1182265866.03,
+            "outcome": "conflicting-no-market"
+          }
+        },
+        {
+          "intent": "SANCTIONS_SCREENING_MATCH_GENERAL",
+          "params": {
+            "name": "0x3E0A40c927a4dA19e6eceCa432adb6ADf36A4046"
+          },
+          "judgement": {
+            "verdict": "clean",
+            "reason": "No sanctions match (score 0)."
+          },
+          "cost_usd": 0.01,
+          "duration_ms": 18182,
+          "signal_hash": "0xad510640ba6fd8177990fedf6049a0579bce8518dee70f8c9379df304b55ca53",
+          "signal_verified": true,
+          "result": {
+            "name": "0x3e0a40c927a4da19e6ececa432adb6adf36a4046",
+            "matched": false,
+            "matches": null,
+            "lists": [
+              "US OFAC SDN and non-SDN Consolidated lists (published 2026-11-13)",
+              "UN Security Council Consolidated List (published 2026-11-15)",
+              "EU Consolidated Financial Sanctions List (published 2026-10-23)",
+              "UK Sanctions List (published 2026-11-12)"
+            ],
+            "match_score": 0
+          },
+          "result_source": "signal",
+          "field_status": {
+            "name": "ok",
+            "matched": "ok",
+            "matches": "missing",
+            "lists": "ok",
+            "match_score": "ok"
+          },
+          "result_shape": "intent",
+          "miner": "Counterproof Sanctions Screener",
+          "receipt_present": true
+        },
+        {
+          "intent": "HONEYPOT_SELL_SIMULATION",
+          "source": "honeypot.is",
+          "judgement": {
+            "verdict": "reject",
+            "reason": "Sell simulation failed (execution reverted: \"revert: HP: BUY_FAILED\") — the token could not be proven sellable."
+          },
+          "cost_usd": 0,
+          "duration_ms": 806,
+          "signal_hash": null,
+          "signal_verified": null,
+          "result": {
+            "honeypotResult": null,
+            "simulationResult": null,
+            "simulationSuccess": false,
+            "simulationError": "execution reverted: \"revert: HP: BUY_FAILED\""
+          },
+          "raw_response": {
+            "token": {
+              "name": "HoneyPot",
+              "symbol": "HNP",
+              "decimals": 18,
+              "address": "0x52a7ed336EEc9580bB9Cc87e5bb8d5a35b844029",
+              "totalHolders": 4
+            },
+            "withToken": {
+              "name": "Wrapped Ether",
+              "symbol": "WETH",
+              "decimals": 18,
+              "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+              "totalHolders": 3330618
+            },
+            "summary": {
+              "risk": "unknown",
+              "flags": [
+                {
+                  "flag": "closed_source",
+                  "description": "The source code is not available, allowing for hidden functionality.",
+                  "severity": "high",
+                  "severityIndex": 16
+                }
+              ]
+            },
+            "simulationSuccess": false,
+            "simulationError": "execution reverted: \"revert: HP: BUY_FAILED\"",
+            "flags": [],
+            "contractCode": {
+              "openSource": false,
+              "rootOpenSource": false,
+              "isProxy": false,
+              "hasProxyCalls": false
+            },
+            "chain": {
+              "id": "1",
+              "name": "Ethereum",
+              "shortName": "eth",
+              "currency": "ETH"
+            },
+            "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+            "pair": {
+              "pair": {
+                "name": "Uniswap V3: HNP-WETH",
+                "address": "0xAE8e27fC49CB359e84F3395d559bA9442613c588",
+                "token0": "0x52a7ed336EEc9580bB9Cc87e5bb8d5a35b844029",
+                "token1": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+                "type": "UniswapV3"
+              },
+              "chainId": "1",
+              "reserves0": "2",
+              "reserves1": "2",
+              "liquidity": 0,
+              "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+              "createdAtTimestamp": "1686681059",
+              "creationTxHash": "0xca5208113bca2b7f76a7b04572cf2cd9a57f54d85c9f97189388a1997d817678"
+            },
+            "pairAddress": "0xAE8e27fC49CB359e84F3395d559bA9442613c588"
+          }
+        }
+      ],
+      "decision": {
+        "memo": "REJECT",
+        "preflight": "REJECT",
+        "notes": [
+          "Rejecting leg(s): HONEYPOT_SELL_SIMULATION.",
+          "Review leg(s): WASH_TRADING_DETECTION_GENERAL, SECURITY_REVIEW_GENERAL, LIQUIDITY_DEPTH_VERIFY_GENERAL.",
+          "Audit leg is thin: SECURITY_REVIEW on a bare address is not a full Solidity audit. Do not list on this leg alone."
+        ]
+      },
+      "total_cost_usd": 0.04,
+      "receipts_returned": 4
+    },
+    "record_hash": "0x37a2c018e0e2a27cb9f887f42509afffac7f166a6e9172903c07cae6e6d744ed",
+    "anchor_tx_hash": "0x8f0ab3d37892cf6d1abf42e09503ff50ec2e1a79014dac5221a00b46cb392d98",
+    "anchor_tx_status": 1,
+    "anchor_gas_used": "14048",
+    "anchor_block": 12148753,
+    "anchored_at_utc": "2026-11-16T17:18:26.568Z",
+    "anchor_note": null,
+    "verify_path": "results/preflight-0x52a7ed336eec9580bb9cc87e5bb8d5a35b844029.json"
+  }
+}

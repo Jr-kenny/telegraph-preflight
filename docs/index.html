@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OneShot — execution integrity, proven on testnet</title>
+<style>
+  :root { --ink:#111; --muted:#5a5a5a; --line:#ddd; --reject:#b3261e; --review:#8a5a00; --clean:#1e7b34; --accent:#1a4fd6; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; color:var(--ink); background:#fff; line-height:1.55; }
+  .wrap { max-width:920px; margin:0 auto; padding:32px 20px 64px; }
+  header { border-bottom:2px solid var(--ink); padding-bottom:20px; margin-bottom:28px; }
+  h1 { font-size:34px; margin:0 0 6px; letter-spacing:-0.5px; }
+  .tagline { font-size:17px; color:var(--muted); margin:0; max-width:640px; }
+  .badge { display:inline-block; font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; padding:3px 8px; border-radius:3px; border:1px solid currentColor; vertical-align:middle; }
+  .badge.testnet { color:var(--accent); border-color:var(--accent); }
+  .badge.reject { color:var(--reject); border-color:var(--reject); background:#fdf1f0; }
+  .badge.review { color:var(--review); border-color:var(--review); background:#fff8e6; }
+  .badge.clean { color:var(--clean); border-color:var(--clean); background:#eef7ef; }
+  h2 { font-size:22px; margin:36px 0 10px; }
+  h3 { font-size:16px; margin:22px 0 8px; }
+  p { margin:8px 0; }
+  .trust { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:16px 0 8px; }
+  .trust div { border:1px solid var(--line); border-radius:6px; padding:14px 16px; }
+  .trust h3 { margin:0 0 6px; font-size:15px; }
+  .trust p { margin:0; font-size:14px; color:var(--muted); }
+  .run { border:1px solid var(--line); border-radius:8px; padding:22px 22px 18px; margin:24px 0 32px; }
+  .run-head { display:flex; flex-wrap:wrap; align-items:baseline; gap:10px; margin-bottom:4px; }
+  .run-head h2 { margin:0; }
+  .mono { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:13px; word-break:break-all; }
+  .meta { color:var(--muted); font-size:14px; margin:6px 0 14px; }
+  table { width:100%; border-collapse:collapse; margin:12px 0; font-size:14px; }
+  th, td { text-align:left; padding:9px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
+  td .mono { font-size:12px; }
+  .leg-reason { color:var(--muted); }
+  .integrity { background:#fafafa; border:1px solid var(--line); border-radius:6px; padding:14px 16px; margin:16px 0; }
+  .integrity p { margin:6px 0; font-size:14px; }
+  .integrity .label { font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
+  a { color:var(--accent); }
+  pre { background:#111; color:#e8e8e8; padding:16px; border-radius:6px; overflow-x:auto; font-size:12.5px; line-height:1.5; margin:12px 0; }
+  details { margin:14px 0; }
+  details summary { cursor:pointer; font-weight:600; font-size:14px; }
+  details pre { background:#f7f7f7; color:#222; border:1px solid var(--line); }
+  .note { background:#fff8e6; border:1px solid #e8d9a0; border-radius:6px; padding:12px 16px; font-size:14px; margin:18px 0; }
+  footer { border-top:1px solid var(--line); margin-top:40px; padding-top:16px; color:var(--muted); font-size:14px; }
+  @media (max-width:640px) {
+    .trust { grid-template-columns:1fr; }
+    h1 { font-size:28px; }
+    .run { padding:16px; }
+    table, thead, tbody, th, td, tr { display:block; }
+    thead { display:none; }
+    tr { border:1px solid var(--line); border-radius:6px; margin:0 0 12px; padding:6px 0; }
+    td { border-bottom:none; padding:6px 12px; }
+    td::before { content:attr(data-label); display:block; font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin-bottom:2px; }
+    pre { white-space:pre-wrap; word-break:break-all; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>OneShot</h1>
+  <p class="tagline">A preflight check for listing a token — where the verdict itself is proven. Every run is written into a single record, hashed, and anchored on-chain, so anyone can check that the answer you see is the answer the checks actually produced. <span class="badge testnet">Sepolia testnet</span></p>
+</header>
+
+<section>
+  <h2>Three kinds of trust</h2>
+  <p>Telegraph proves the checks were bought. OneShot proves the verdict is honest. That takes three things, and every run below shows all three.</p>
+  <div class="trust">
+    <div>
+      <h3>1. Data cross-checked</h3>
+      <p>The numbers are checked against independent sources — DexScreener for liquidity, honeypot.is for sellability — so one wrong answer from one miner does not pass unnoticed.</p>
+    </div>
+    <div>
+      <h3>2. Answer verified</h3>
+      <p>Every paid check comes back with a receipt (a signal hash). Anyone can fetch that receipt from the Telegraph node and see the exact result the miner returned.</p>
+    </div>
+    <div>
+      <h3>3. Execution proven</h3>
+      <p>The whole run — legs, results, verdict, cost — is written into one record, hashed with SHA-256, and the hash is anchored on Sepolia. Runs are numbered in order, so none can be silently re-rolled or rewritten. <code>node verify.js</code> re-checks all of it.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Two real runs</h2>
+  <p>Both runs are on Sepolia testnet, paid in testnet USDC ($0.04 each, 4 paid checks). Both verdicts are <strong>REJECT</strong>. Nothing here was listed. That is the honest result the evidence produced — and the point is that the record proves it, whichever way the verdict falls.</p>
+
+  <!-- RUN 1 : USDC -->
+  <article class="run" id="run-usdc">
+    <div class="run-head">
+      <h2>Run #4 — USDC</h2>
+      <span class="badge reject">REJECT / REJECT</span>
+    </div>
+    <p class="meta">Token <span class="mono">0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48</span> on ethereum &middot; Run at 2026-11-16T17:15:47.369Z &middot; Cost $0.04 testnet USDC (4 of 5 paid calls returned a receipt)</p>
+    <p>Mission 01 (Exchange) verdict: <strong>REJECT</strong> &middot; Mission 14 (Web3 Native &amp; DeFi) verdict: <strong>REJECT</strong></p>
+    <p>The wash-trading miner flagged the token: the USDC/USDT pool on the “metric” DEX showed 81% wash volume ($148.76M of volume against $5.66M of liquidity, buys and sells almost equal at 750 vs 828). The liquidity figure itself checked out against DexScreener. The security review was thin, and the token is not a honeypot — but one rejecting leg rejects the run.</p>
+
+    <h3>Legs</h3>
+    <table>
+      <thead><tr><th>Check</th><th>Verdict</th><th>What it found</th><th>Cost</th></tr></thead>
+      <tbody>
+        <tr>
+          <td data-label="Check">WASH_TRADING_DETECTION_GENERAL<br><span class="mono">0x167d47626325c469280ae780fc9ddfe8dc868d69e8e65c375bf5ff2a57acddd6</span></td>
+          <td data-label="Verdict"><span class="badge reject">REJECT</span></td>
+          <td data-label="What it found">Wash-trading verdict <em>likely_wash_trading</em>, wash volume 81%. USDC/USDT on metric (ethereum): 24h volume $148.76M is 26.3x the pool’s $5.66M liquidity; buys and sells almost equal (750 vs 828), as round-trip trading leaves them.</td>
+          <td data-label="Cost">$0.01<br>16,011 ms<br>receipt verified</td>
+        </tr>
+        <tr>
+          <td data-label="Check">SECURITY_REVIEW_GENERAL<br><span class="mono">0x6b9bd9f290814c6dc574e819c3764d7f13771ebcd1d3b196a04a6fa7b2adf169</span></td>
+          <td data-label="Verdict"><span class="badge review">REVIEW</span></td>
+          <td data-label="What it found">Security review said Secure, but vulnerability_count and issues came back missing — the review was thin (the miner scanned the address string, not contract code). This is not a full audit.</td>
+          <td data-label="Cost">$0.01<br>14,790 ms<br>receipt verified</td>
+        </tr>
+        <tr>
+          <td data-label="Check">LIQUIDITY_DEPTH_VERIFY_GENERAL<br><span class="mono">0x16ebd4c96abecce8c9f89f2e706f01df6991353f841f0a26efc0bfd922f1c192</span></td>
+          <td data-label="Verdict"><span class="badge clean">CLEAN</span></td>
+          <td data-label="What it found">Liquidity $76,761,151.71. DexScreener cross-check: confirmed-by-pair — the token-endpoint top pair ($5,662,893.13) disagreed, but the exact pool on DexScreener holds $76,845,014.35, within 10x of Telegraph $76,761,151.71.</td>
+          <td data-label="Cost">$0.01<br>15,014 ms<br>receipt verified</td>
+        </tr>
+        <tr>
+          <td data-label="Check">SANCTIONS_SCREENING_MATCH_GENERAL<br><span class="mono">0xceedb9ed601f42e3c120bf1f8d39db0eac270283ba49d576a490608b2c72c924</span></td>
+          <td data-label="Verdict"><span class="badge clean">CLEAN</span></td>
+          <td data-label="What it found">No sanctions match (score 0). Checked against US OFAC SDN, UN Security Council, EU consolidated and UK sanctions lists.</td>
+          <td data-label="Cost">$0.01<br>12,758 ms<br>receipt verified</td>
+        </tr>
+        <tr>
+          <td data-label="Check">HONEYPOT_SELL_SIMULATION<br><span class="leg-reason">honeypot.is (free, no Telegraph payment)</span></td>
+          <td data-label="Verdict"><span class="badge clean">CLEAN</span></td>
+          <td data-label="What it found">Sell simulation succeeded, sell tax 0%, buy tax 0%, not a honeypot.</td>
+          <td data-label="Cost">$0.00<br>904 ms</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="integrity">
+      <p><span class="label">Execution record hash (SHA-256)</span><br><span class="mono">0x9c22a405f542afc49d338d1ebb27dfb69a1b7bfa0fd2c639288d3bd0d367141b</span></p>
+      <p><span class="label">Anchor tx (Sepolia)</span><br><a class="mono" href="https://sepolia.etherscan.io/tx/0x37f969d37c9719a23c098c5bc78a7af287348a6c95cd46058241506302d36f15">0x37f969d37c9719a23c098c5bc78a7af287348a6c95cd46058241506302d36f15</a><br>gas used: 14,048 &middot; block 12,148,744</p>
+      <p><span class="label">Verify it yourself</span><br><span class="mono">node verify.js results/preflight-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.json</span></p>
+    </div>
+
+    <h3>Verify output</h3>
+    <pre>OneShot verify — results/preflight-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.json
+Record: 0x9c22a405f542afc49d338d1ebb27dfb69a1b7bfa0fd2c639288d3bd0d367141b (run #4, 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48 on ethereum, 2026-11-16T17:15:47.369Z)
+
+[PASS] record-hash: Canonical SHA-256 of the record matches the stored hash (0x9c22a405f542afc49d338d1ebb27dfb69a1b7bfa0fd2c639288d3bd0d367141b).
+[PASS] anchor: Anchor tx 0x37f969d37c9719a23c098c5bc78a7af287348a6c95cd46058241506302d36f15 is on Sepolia (block 12148744), calldata is exactly the record hash, receipt succeeded.
+[PASS] signals: 4 signal(s) re-fetched from the Telegraph node, all verified, all results match the record.
+[PASS] verdict: Re-derived verdict matches the record: REJECT / REJECT.
+[PASS] honeypot-freshness: honeypot.is still agrees with the record (clean).
+
+PASS — the execution record is proven.</pre>
+
+    <details>
+      <summary>Full memo (as produced by the run)</summary>
+      <pre># OneShot execution record — 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48 on ethereum
+
+Network: Sepolia testnet (eip155:11155111) — testnet result, not mainnet.
+Mission 01 (Exchange) verdict: **REJECT**
+Mission 14 (Web3 Native &amp; DeFi) verdict: **REJECT**
+
+Total cost: $0.04 testnet USDC (4 of 5 paid calls returned a receipt).
+
+## WASH_TRADING_DETECTION_GENERAL
+- Leg verdict: REJECT — Wash-trading verdict likely_wash_trading, wash volume 81%.
+- Cost: $0.01 — 16011 ms — signal_hash: 0x167d47626325c469280ae780fc9ddfe8dc868d69e8e65c375bf5ff2a57acddd6
+- Receipt verified: yes
+- Result: {"subject":"0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48","verdict":"likely_wash_trading","wash_volume_pct":81,"signals":["24h volume $148.76M is 26.3x the pool's $5.66M liquidity","Buys and sells are almost equal (750 vs 828), as round-trip trading leaves them"],"summary":"The USDC/USDT on metric (ethereum) pool shows signs of wash trading. An estimated 81% of its volume is above a generous organic turnover of 5x liquidity a day."}
+
+## SECURITY_REVIEW_GENERAL
+- Leg verdict: REVIEW — Security review said Secure, but vulnerability_count and issues came back missing — the review was thin (the miner scanned the address string, not contract code). This is not a full audit.
+- Cost: $0.01 — 14790 ms — signal_hash: 0x6b9bd9f290814c6dc574e819c3764d7f13771ebcd1d3b196a04a6fa7b2adf169
+- Receipt verified: yes
+- Result: {"verdict":"Secure","vulnerability_count":null,"issues":null,"summary":"Verdict: secure. No injection, eval, shell, deserialization, TLS, path, SSRF, XSS or hardcoded-secret patterns in 1 line scanned."}
+
+## LIQUIDITY_DEPTH_VERIFY_GENERAL
+- Leg verdict: CLEAN — Liquidity $76,761,151.71.
+- Cost: $0.01 — 15014 ms — signal_hash: 0x16ebd4c96abecce8c9f89f2e706f01df6991353f841f0a26efc0bfd922f1c192
+- Receipt verified: yes
+- Result: {"liquidity_usd":76761151.71}
+- DexScreener cross-check: confirmed-by-pair — Token-endpoint top pair ($5,662,893.13) disagreed, but the exact pool on DexScreener holds $76,845,014.35, within 10x of Telegraph $76,761,151.71.
+
+## SANCTIONS_SCREENING_MATCH_GENERAL
+- Leg verdict: CLEAN — No sanctions match (score 0).
+- Cost: $0.01 — 12758 ms — signal_hash: 0xceedb9ed601f42e3c120bf1f8d39db0eac270283ba49d576a490608b2c72c924
+- Receipt verified: yes
+- Result: {"name":"0x3e0a40c927a4da19e6ececa432adb6adf36a4046","matched":false,"matches":null,"lists":["US OFAC SDN and non-SDN Consolidated lists (published 2026-11-13)","UN Security Council Consolidated List (published 2026-11-15)","EU Consolidated Financial Sanctions List (published 2026-10-23)","UK Sanctions List (published 2026-11-12)"],"match_score":0}
+
+## HONEYPOT_SELL_SIMULATION
+- Leg verdict: CLEAN — Sell simulation succeeded, sell tax 0%, not a honeypot.
+- Source: honeypot.is (free check, no Telegraph payment)
+- Receipt verified: not checked
+- Result: isHoneypot=false, sellTax=0%, buyTax=0%, simulationSuccess=true
+
+## Notes
+- Rejecting leg(s): WASH_TRADING_DETECTION_GENERAL.
+- Review leg(s): SECURITY_REVIEW_GENERAL.
+- Audit leg is thin: SECURITY_REVIEW on a bare address is not a full Solidity audit. Do not list on this leg alone.
+
+## Execution integrity — OneShot
+- Execution record hash (SHA-256): 0x9c22a405f542afc49d338d1ebb27dfb69a1b7bfa0fd2c639288d3bd0d367141b
+- Run sequence: #4
+- Anchor tx (Sepolia): 0x37f969d37c9719a23c098c5bc78a7af287348a6c95cd46058241506302d36f15
+- Anchor: https://sepolia.etherscan.io/tx/0x37f969d37c9719a23c098c5bc78a7af287348a6c95cd46058241506302d36f15 (gas used: 14048, block 12148744)
+- Verify it yourself: node verify.js results/preflight-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.json
+
+Run at: 2026-11-16T17:15:47.369Z — wallet: 0x3E0A40c927a4dA19e6eceCa432adb6ADf36A4046 (testnet only).</pre>
+    </details>
+  </article>
+
+  <!-- RUN 2 : HNP -->
+  <article class="run" id="run-hnp">
+    <div class="run-head">
+      <h2>Run #5 — HNP (HoneyPot)</h2>
+      <span class="badge reject">REJECT / REJECT</span>
+    </div>
+    <p class="meta">Token <span class="mono">0x52a7ed336eec9580bb9cc87e5bb8d5a35b844029</span> on ethereum &middot; Run at 2026-11-16T17:18:21.255Z &middot; Cost $0.04 testnet USDC (4 of 5 paid calls returned a receipt)</p>
+    <p>Mission 01 (Exchange) verdict: <strong>REJECT</strong> &middot; Mission 14 (Web3 Native &amp; DeFi) verdict: <strong>REJECT</strong></p>
+    <p>The honeypot check caught what no Telegraph intent flags: the sell simulation fails — the token cannot be proven sellable (“revert: HP: BUY_FAILED”). The liquidity miner also returned a figure that does not hold up: $1,182,265,866.03 for a token the wash leg says has no DEX market at all. Both the consistency check and the DexScreener cross-check flagged it, and the leg was downgraded to review.</p>
+
+    <h3>Legs</h3>
+    <table>
+      <thead><tr><th>Check</th><th>Verdict</th><th>What it found</th><th>Cost</th></tr></thead>
+      <tbody>
+        <tr>
+          <td data-label="Check">WASH_TRADING_DETECTION_GENERAL<br><span class="mono">0x351e48eaadd207181f5f2c9187f7a7002af902427631398851ceaf0af8daf845</span></td>
+          <td data-label="Verdict"><span class="badge review">REVIEW</span></td>
+          <td data-label="What it found">Wash-trading check was inconclusive. No DEX market found for this token. Not a clean pass.</td>
+          <td data-label="Cost">$0.01<br>21,262 ms<br>receipt verified</td>
+        </tr>
+        <tr>
+          <td data-label="Check">SECURITY_REVIEW_GENERAL<br><span class="mono">0xedaba21ca7eee59042a21b1d490dedae6826e11f707225b413941cb6c8f257ae</span></td>
+          <td data-label="Verdict"><span class="badge review">REVIEW</span></td>
+          <td data-label="What it found">Security review said Secure, but vulnerability_count and issues came back missing — the review was thin (the miner scanned the address string, not contract code). This is not a full audit.</td>
+          <td data-label="Cost">$0.01<br>19,470 ms<br>receipt verified</td>
+        </tr>
+        <tr>
+          <td data-label="Check">LIQUIDITY_DEPTH_VERIFY_GENERAL<br><span class="mono">0xbce96eae0c3aacf2238d368fe2be76474978e31ac20697a219f05c60edefe71a</span></td>
+          <td data-label="Verdict"><span class="badge review">REVIEW</span></td>
+          <td data-label="What it found">Liquidity figure $1,182,265,866.03 conflicts with the wash leg, which found no DEX market for this token — the figure is not trusted. DexScreener cross-check: conflicting-no-market.</td>
+          <td data-label="Cost">$0.01<br>26,576 ms<br>receipt verified</td>
+        </tr>
+        <tr>
+          <td data-label="Check">SANCTIONS_SCREENING_MATCH_GENERAL<br><span class="mono">0xad510640ba6fd8177990fedf6049a0579bce8518dee70f8c9379df304b55ca53</span></td>
+          <td data-label="Verdict"><span class="badge clean">CLEAN</span></td>
+          <td data-label="What it found">No sanctions match (score 0). Checked against US OFAC SDN, UN Security Council, EU consolidated and UK sanctions lists.</td>
+          <td data-label="Cost">$0.01<br>18,182 ms<br>receipt verified</td>
+        </tr>
+        <tr>
+          <td data-label="Check">HONEYPOT_SELL_SIMULATION<br><span class="leg-reason">honeypot.is (free, no Telegraph payment)</span></td>
+          <td data-label="Verdict"><span class="badge reject">REJECT</span></td>
+          <td data-label="What it found">Sell simulation failed (execution reverted: “revert: HP: BUY_FAILED”) — the token could not be proven sellable.</td>
+          <td data-label="Cost">$0.00<br>806 ms</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="integrity">
+      <p><span class="label">Execution record hash (SHA-256)</span><br><span class="mono">0x37a2c018e0e2a27cb9f887f42509afffac7f166a6e9172903c07cae6e6d744ed</span></p>
+      <p><span class="label">Anchor tx (Sepolia)</span><br><a class="mono" href="https://sepolia.etherscan.io/tx/0x8f0ab3d37892cf6d1abf42e09503ff50ec2e1a79014dac5221a00b46cb392d98">0x8f0ab3d37892cf6d1abf42e09503ff50ec2e1a79014dac5221a00b46cb392d98</a><br>gas used: 14,048 &middot; block 12,148,753</p>
+      <p><span class="label">Verify it yourself</span><br><span class="mono">node verify.js results/preflight-0x52a7ed336eec9580bb9cc87e5bb8d5a35b844029.json</span></p>
+    </div>
+
+    <h3>Verify output</h3>
+    <pre>OneShot verify — results/preflight-0x52a7ed336eec9580bb9cc87e5bb8d5a35b844029.json
+Record: 0x37a2c018e0e2a27cb9f887f42509afffac7f166a6e9172903c07cae6e6d744ed (run #5, 0x52a7ed336eec9580bb9cc87e5bb8d5a35b844029 on ethereum, 2026-11-16T17:18:21.255Z)
+
+[PASS] record-hash: Canonical SHA-256 of the record matches the stored hash (0x37a2c018e0e2a27cb9f887f42509afffac7f166a6e9172903c07cae6e6d744ed).
+[PASS] anchor: Anchor tx 0x8f0ab3d37892cf6d1abf42e09503ff50ec2e1a79014dac5221a00b46cb392d98 is on Sepolia (block 12148753), calldata is exactly the record hash, receipt succeeded.
+[PASS] signals: 4 signal(s) re-fetched from the Telegraph node, all verified, all results match the record.
+[PASS] verdict: Re-derived verdict matches the record: REJECT / REJECT.
+[PASS] honeypot-freshness: honeypot.is still agrees with the record (reject).
+
+PASS — the execution record is proven.</pre>
+
+    <details>
+      <summary>Full memo (as produced by the run)</summary>
+      <pre># OneShot execution record — 0x52a7ed336eec9580bb9cc87e5bb8d5a35b844029 on ethereum
+
+Network: Sepolia testnet (eip155:11155111) — testnet result, not mainnet.
+Mission 01 (Exchange) verdict: **REJECT**
+Mission 14 (Web3 Native &amp; DeFi) verdict: **REJECT**
+
+Total cost: $0.04 testnet USDC (4 of 5 paid calls returned a receipt).
+
+## WASH_TRADING_DETECTION_GENERAL
+- Leg verdict: REVIEW — Wash-trading check was inconclusive. Not a clean pass.
+- Cost: $0.01 — 21262 ms — signal_hash: 0x351e48eaadd207181f5f2c9187f7a7002af902427631398851ceaf0af8daf845
+- Receipt verified: yes
+- Result: {"subject":"0x52a7ed336eec9580bb9cc87e5bb8d5a35b844029","verdict":"inconclusive","wash_volume_pct":null,"signals":null,"summary":"No DEX market found for 0x52a7ed336eec9580bb9cc87e5bb8d5a35b844029."}
+
+## SECURITY_REVIEW_GENERAL
+- Leg verdict: REVIEW — Security review said Secure, but vulnerability_count and issues came back missing — the review was thin (the miner scanned the address string, not contract code). This is not a full audit.
+- Cost: $0.01 — 19470 ms — signal_hash: 0xedaba21ca7eee59042a21b1d490dedae6826e11f707225b413941cb6c8f257ae
+- Receipt verified: yes
+- Result: {"verdict":"Secure","vulnerability_count":null,"issues":null,"summary":"Verdict: secure. No injection, eval, shell, deserialization, TLS, path, SSRF, XSS or hardcoded-secret patterns in 1 line scanned."}
+
+## LIQUIDITY_DEPTH_VERIFY_GENERAL
+- Leg verdict: REVIEW — Liquidity figure $1,182,265,866.03 conflicts with the wash leg, which found no DEX market for this token — the figure is not trusted.
+- Cost: $0.01 — 26576 ms — signal_hash: 0xbce96eae0c3aacf2238d368fe2be76474978e31ac20697a219f05c60edefe71a
+- Receipt verified: yes
+- Result: {"liquidity_usd":1182265866.03}
+- DexScreener cross-check: conflicting-no-market
+- Consistency flag: conflicts with wash leg (no DEX market found)
+
+## SANCTIONS_SCREENING_MATCH_GENERAL
+- Leg verdict: CLEAN — No sanctions match (score 0).
+- Cost: $0.01 — 18182 ms — signal_hash: 0xad510640ba6fd8177990fedf6049a0579bce8518dee70f8c9379df304b55ca53
+- Receipt verified: yes
+- Result: {"name":"0x3e0a40c927a4da19e6ececa432adb6adf36a4046","matched":false,"matches":null,"lists":["US OFAC SDN and non-SDN Consolidated lists (published 2026-11-13)","UN Security Council Consolidated List (published 2026-11-15)","EU Consolidated Financial Sanctions List (published 2026-10-23)","UK Sanctions List (published 2026-11-12)"],"match_score":0}
+
+## HONEYPOT_SELL_SIMULATION
+- Leg verdict: REJECT — Sell simulation failed (execution reverted: "revert: HP: BUY_FAILED") — the token could not be proven sellable.
+- Source: honeypot.is (free check, no Telegraph payment)
+- Receipt verified: not checked
+- Result: isHoneypot=?, sellTax=?, buyTax=?, simulationSuccess=false, error: execution reverted: "revert: HP: BUY_FAILED"
+
+## Notes
+- Rejecting leg(s): HONEYPOT_SELL_SIMULATION.
+- Review leg(s): WASH_TRADING_DETECTION_GENERAL, SECURITY_REVIEW_GENERAL, LIQUIDITY_DEPTH_VERIFY_GENERAL.
+- Audit leg is thin: SECURITY_REVIEW on a bare address is not a full Solidity audit. Do not list on this leg alone.
+
+## Execution integrity — OneShot
+- Execution record hash (SHA-256): 0x37a2c018e0e2a27cb9f887f42509afffac7f166a6e9172903c07cae6e6d744ed
+- Run sequence: #5
+- Anchor tx (Sepolia): 0x8f0ab3d37892cf6d1abf42e09503ff50ec2e1a79014dac5221a00b46cb392d98
+- Anchor: https://sepolia.etherscan.io/tx/0x8f0ab3d37892cf6d1abf42e09503ff50ec2e1a79014dac5221a00b46cb392d98 (gas used: 14048, block 12148753)
+- Verify it yourself: node verify.js results/preflight-0x52a7ed336eec9580bb9cc87e5bb8d5a35b844029.json
+
+Run at: 2026-11-16T17:18:21.255Z — wallet: 0x3E0A40c927a4dA19e6eceCa432adb6ADf36A4046 (testnet only).</pre>
+    </details>
+  </article>
+
+  <div class="note">
+    <strong>Why both runs reject.</strong> A preflight that only ever says “list” proves nothing. USDC was rejected because the wash-trading miner flagged its pool at 81% wash volume; HNP was rejected because it cannot be proven sellable. OneShot records the verdict the evidence actually produced — and the anchor plus <code>verify.js</code> let anyone confirm that record, instead of taking the tool’s word for it.
+  </div>
+</section>
+
+<section>
+  <h2>How it works</h2>
+  <p>OneShot runs four paid Telegraph checks (wash trading, security review, liquidity depth, sanctions screening) for $0.04 testnet USDC, then adds two free checks — a honeypot sell simulation (honeypot.is) and a DexScreener liquidity cross-check — before deciding. After the checks, it builds one canonical execution record, hashes it, and anchors the hash on Sepolia with a 0-value transaction carrying the hash as calldata. No run is anchored if it produced zero receipts.</p>
+  <p>To check a run yourself:</p>
+  <pre>git clone https://github.com/Jr-kenny/telegraph-preflight
+cd telegraph-preflight
+node verify.js results/preflight-0x52a7ed336eec9580bb9cc87e5bb8d5a35b844029.json</pre>
+  <p>The verifier recomputes the record hash, confirms the anchor transaction on Sepolia carries that hash, re-fetches each signal from the Telegraph node and checks the results match the record, re-derives the verdict from the re-fetched evidence, and re-checks the honeypot result against honeypot.is. It exits 0 only if every check passes.</p>
+</section>
+
+<footer>
+  <p>OneShot — built for the Telegraph Hackathon Season II, Missions 01 + 14, Apps track. Testnet only. Every number on this page comes from the two runs above; nothing was invented. Source: <a href="https://github.com/Jr-kenny/telegraph-preflight">github.com/Jr-kenny/telegraph-preflight</a>.</p>
+</footer>
+
+</div>
+</body>
+</html>

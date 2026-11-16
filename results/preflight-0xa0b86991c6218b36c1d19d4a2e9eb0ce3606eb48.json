@@ -1,0 +1,510 @@
+{
+  "tool": "oneshot",
+  "tool_version": "2.0.0",
+  "network": "eip155:11155111",
+  "network_label": "Sepolia testnet",
+  "chain": "ethereum",
+  "token": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+  "treasury": "0x3E0A40c927a4dA19e6eceCa432adb6ADf36A4046",
+  "handle": null,
+  "wallet": "0x3E0A40c927a4dA19e6eceCa432adb6ADf36A4046",
+  "run_at_utc": "2026-11-16T17:15:47.369Z",
+  "legs": [
+    {
+      "intent": "WASH_TRADING_DETECTION_GENERAL",
+      "params": {
+        "subject": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48 on ethereum"
+      },
+      "judgement": {
+        "verdict": "reject",
+        "reason": "Wash-trading verdict likely_wash_trading, wash volume 81%."
+      },
+      "cost_usd": 0.01,
+      "duration_ms": 16011,
+      "signal_hash": "0x167d47626325c469280ae780fc9ddfe8dc868d69e8e65c375bf5ff2a57acddd6",
+      "signal_verified": true,
+      "result": {
+        "subject": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "verdict": "likely_wash_trading",
+        "wash_volume_pct": 81,
+        "signals": [
+          "24h volume $148.76M is 26.3x the pool's $5.66M liquidity",
+          "Buys and sells are almost equal (750 vs 828), as round-trip trading leaves them"
+        ],
+        "summary": "The USDC/USDT on metric (ethereum) pool shows signs of wash trading. An estimated 81% of its volume is above a generous organic turnover of 5x liquidity a day."
+      },
+      "result_source": "signal",
+      "field_status": {
+        "subject": "ok",
+        "verdict": "ok",
+        "wash_volume_pct": "ok",
+        "signals": "ok",
+        "summary": "ok"
+      },
+      "result_shape": "intent",
+      "miner": "PREFLIGHT Infrastructure Signals",
+      "receipt_present": true
+    },
+    {
+      "intent": "SECURITY_REVIEW_GENERAL",
+      "params": {
+        "target": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+      },
+      "judgement": {
+        "verdict": "review",
+        "reason": "Security review said Secure, but vulnerability_count and issues came back missing — the review was thin (the miner scanned the address string, not contract code). This is not a full audit."
+      },
+      "cost_usd": 0.01,
+      "duration_ms": 14790,
+      "signal_hash": "0x6b9bd9f290814c6dc574e819c3764d7f13771ebcd1d3b196a04a6fa7b2adf169",
+      "signal_verified": true,
+      "result": {
+        "verdict": "Secure",
+        "vulnerability_count": null,
+        "issues": null,
+        "summary": "Verdict: secure. No injection, eval, shell, deserialization, TLS, path, SSRF, XSS or hardcoded-secret patterns in 1 line scanned."
+      },
+      "result_source": "signal",
+      "field_status": {
+        "verdict": "ok",
+        "vulnerability_count": "missing",
+        "issues": "missing",
+        "summary": "ok"
+      },
+      "result_shape": "intent",
+      "miner": "PR Guard Sentinel (code and dependency security review)",
+      "receipt_present": true
+    },
+    {
+      "intent": "LIQUIDITY_DEPTH_VERIFY_GENERAL",
+      "params": {
+        "pool": "WETH/USDC on ethereum",
+        "chain": "ethereum"
+      },
+      "judgement": {
+        "verdict": "clean",
+        "reason": "Liquidity $76,761,151.71."
+      },
+      "cost_usd": 0.01,
+      "duration_ms": 15014,
+      "signal_hash": "0x16ebd4c96abecce8c9f89f2e706f01df6991353f841f0a26efc0bfd922f1c192",
+      "signal_verified": true,
+      "result": {
+        "liquidity_usd": 76761151.71
+      },
+      "result_source": "signal",
+      "field_status": {
+        "liquidity_usd": "ok"
+      },
+      "result_shape": "intent",
+      "miner": "PREFLIGHT Infrastructure Signals",
+      "receipt_present": true,
+      "cross_check": {
+        "source": "dexscreener",
+        "dex_max_usd": 5662893.13,
+        "dex_pairs_on_chain": 3,
+        "telegraph_usd": 76761151.71,
+        "outcome": "confirmed-by-pair",
+        "pair_address": "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640",
+        "pair_liquidity_usd": 76845014.35,
+        "note": "Token-endpoint top pair ($5,662,893.13) disagreed, but the exact pool on DexScreener holds $76,845,014.35, within 10x of Telegraph $76,761,151.71."
+      }
+    },
+    {
+      "intent": "SANCTIONS_SCREENING_MATCH_GENERAL",
+      "params": {
+        "name": "0x3E0A40c927a4dA19e6eceCa432adb6ADf36A4046"
+      },
+      "judgement": {
+        "verdict": "clean",
+        "reason": "No sanctions match (score 0)."
+      },
+      "cost_usd": 0.01,
+      "duration_ms": 12758,
+      "signal_hash": "0xceedb9ed601f42e3c120bf1f8d39db0eac270283ba49d576a490608b2c72c924",
+      "signal_verified": true,
+      "result": {
+        "name": "0x3e0a40c927a4da19e6ececa432adb6adf36a4046",
+        "matched": false,
+        "matches": null,
+        "lists": [
+          "US OFAC SDN and non-SDN Consolidated lists (published 2026-11-13)",
+          "UN Security Council Consolidated List (published 2026-11-15)",
+          "EU Consolidated Financial Sanctions List (published 2026-10-23)",
+          "UK Sanctions List (published 2026-11-12)"
+        ],
+        "match_score": 0
+      },
+      "result_source": "signal",
+      "field_status": {
+        "name": "ok",
+        "matched": "ok",
+        "matches": "missing",
+        "lists": "ok",
+        "match_score": "ok"
+      },
+      "result_shape": "intent",
+      "miner": "Counterproof Sanctions Screener",
+      "receipt_present": true
+    },
+    {
+      "intent": "HONEYPOT_SELL_SIMULATION",
+      "source": "honeypot.is",
+      "judgement": {
+        "verdict": "clean",
+        "reason": "Sell simulation succeeded, sell tax 0%, not a honeypot."
+      },
+      "cost_usd": 0,
+      "duration_ms": 904,
+      "signal_hash": null,
+      "signal_verified": null,
+      "result": {
+        "honeypotResult": {
+          "isHoneypot": false
+        },
+        "simulationResult": {
+          "buyTax": 0,
+          "sellTax": 0,
+          "transferTax": 0,
+          "buyGas": "181679",
+          "sellGas": "140024"
+        },
+        "simulationSuccess": true,
+        "simulationError": null
+      },
+      "raw_response": {
+        "token": {
+          "name": "USD Coin",
+          "symbol": "USDC",
+          "decimals": 6,
+          "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "totalHolders": 9197291
+        },
+        "withToken": {
+          "name": "Wrapped Ether",
+          "symbol": "WETH",
+          "decimals": 18,
+          "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+          "totalHolders": 3330614
+        },
+        "summary": {
+          "risk": "low",
+          "riskLevel": 1,
+          "flags": []
+        },
+        "simulationSuccess": true,
+        "honeypotResult": {
+          "isHoneypot": false
+        },
+        "simulationResult": {
+          "buyTax": 0,
+          "sellTax": 0,
+          "transferTax": 0,
+          "buyGas": "181679",
+          "sellGas": "140024"
+        },
+        "flags": [],
+        "contractCode": {
+          "openSource": true,
+          "rootOpenSource": true,
+          "isProxy": true,
+          "hasProxyCalls": true
+        },
+        "chain": {
+          "id": "1",
+          "name": "Ethereum",
+          "shortName": "eth",
+          "currency": "ETH"
+        },
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "pair": {
+          "pair": {
+            "name": "Uniswap V3: USDC-WETH",
+            "address": "0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640",
+            "token0": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+            "token1": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+            "type": "UniswapV3"
+          },
+          "chainId": "1",
+          "reserves0": "19649779472688",
+          "reserves1": "31338507639694250688673",
+          "liquidity": 76821475.892189,
+          "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+          "createdAtTimestamp": "1620250931",
+          "creationTxHash": "0x125e0b641d4a4b08806bf52c0c6757648c9963bcda8681e4f996f09e00d4c2cc"
+        },
+        "pairAddress": "0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640"
+      }
+    }
+  ],
+  "receipts_returned": 4,
+  "total_cost_usd": 0.04,
+  "decision": {
+    "memo": "REJECT",
+    "preflight": "REJECT",
+    "notes": [
+      "Rejecting leg(s): WASH_TRADING_DETECTION_GENERAL.",
+      "Review leg(s): SECURITY_REVIEW_GENERAL.",
+      "Audit leg is thin: SECURITY_REVIEW on a bare address is not a full Solidity audit. Do not list on this leg alone."
+    ]
+  },
+  "execution": {
+    "record": {
+      "tool": "oneshot",
+      "tool_version": "2.0.0",
+      "chain": "ethereum",
+      "token": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "treasury": "0x3E0A40c927a4dA19e6eceCa432adb6ADf36A4046",
+      "wallet": "0x3E0A40c927a4dA19e6eceCa432adb6ADf36A4046",
+      "run_seq": 4,
+      "run_at_utc": "2026-11-16T17:15:47.369Z",
+      "legs": [
+        {
+          "intent": "WASH_TRADING_DETECTION_GENERAL",
+          "params": {
+            "subject": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48 on ethereum"
+          },
+          "judgement": {
+            "verdict": "reject",
+            "reason": "Wash-trading verdict likely_wash_trading, wash volume 81%."
+          },
+          "cost_usd": 0.01,
+          "duration_ms": 16011,
+          "signal_hash": "0x167d47626325c469280ae780fc9ddfe8dc868d69e8e65c375bf5ff2a57acddd6",
+          "signal_verified": true,
+          "result": {
+            "subject": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+            "verdict": "likely_wash_trading",
+            "wash_volume_pct": 81,
+            "signals": [
+              "24h volume $148.76M is 26.3x the pool's $5.66M liquidity",
+              "Buys and sells are almost equal (750 vs 828), as round-trip trading leaves them"
+            ],
+            "summary": "The USDC/USDT on metric (ethereum) pool shows signs of wash trading. An estimated 81% of its volume is above a generous organic turnover of 5x liquidity a day."
+          },
+          "result_source": "signal",
+          "field_status": {
+            "subject": "ok",
+            "verdict": "ok",
+            "wash_volume_pct": "ok",
+            "signals": "ok",
+            "summary": "ok"
+          },
+          "result_shape": "intent",
+          "miner": "PREFLIGHT Infrastructure Signals",
+          "receipt_present": true
+        },
+        {
+          "intent": "SECURITY_REVIEW_GENERAL",
+          "params": {
+            "target": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+          },
+          "judgement": {
+            "verdict": "review",
+            "reason": "Security review said Secure, but vulnerability_count and issues came back missing — the review was thin (the miner scanned the address string, not contract code). This is not a full audit."
+          },
+          "cost_usd": 0.01,
+          "duration_ms": 14790,
+          "signal_hash": "0x6b9bd9f290814c6dc574e819c3764d7f13771ebcd1d3b196a04a6fa7b2adf169",
+          "signal_verified": true,
+          "result": {
+            "verdict": "Secure",
+            "vulnerability_count": null,
+            "issues": null,
+            "summary": "Verdict: secure. No injection, eval, shell, deserialization, TLS, path, SSRF, XSS or hardcoded-secret patterns in 1 line scanned."
+          },
+          "result_source": "signal",
+          "field_status": {
+            "verdict": "ok",
+            "vulnerability_count": "missing",
+            "issues": "missing",
+            "summary": "ok"
+          },
+          "result_shape": "intent",
+          "miner": "PR Guard Sentinel (code and dependency security review)",
+          "receipt_present": true
+        },
+        {
+          "intent": "LIQUIDITY_DEPTH_VERIFY_GENERAL",
+          "params": {
+            "pool": "WETH/USDC on ethereum",
+            "chain": "ethereum"
+          },
+          "judgement": {
+            "verdict": "clean",
+            "reason": "Liquidity $76,761,151.71."
+          },
+          "cost_usd": 0.01,
+          "duration_ms": 15014,
+          "signal_hash": "0x16ebd4c96abecce8c9f89f2e706f01df6991353f841f0a26efc0bfd922f1c192",
+          "signal_verified": true,
+          "result": {
+            "liquidity_usd": 76761151.71
+          },
+          "result_source": "signal",
+          "field_status": {
+            "liquidity_usd": "ok"
+          },
+          "result_shape": "intent",
+          "miner": "PREFLIGHT Infrastructure Signals",
+          "receipt_present": true,
+          "cross_check": {
+            "source": "dexscreener",
+            "dex_max_usd": 5662893.13,
+            "dex_pairs_on_chain": 3,
+            "telegraph_usd": 76761151.71,
+            "outcome": "confirmed-by-pair",
+            "pair_address": "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640",
+            "pair_liquidity_usd": 76845014.35,
+            "note": "Token-endpoint top pair ($5,662,893.13) disagreed, but the exact pool on DexScreener holds $76,845,014.35, within 10x of Telegraph $76,761,151.71."
+          }
+        },
+        {
+          "intent": "SANCTIONS_SCREENING_MATCH_GENERAL",
+          "params": {
+            "name": "0x3E0A40c927a4dA19e6eceCa432adb6ADf36A4046"
+          },
+          "judgement": {
+            "verdict": "clean",
+            "reason": "No sanctions match (score 0)."
+          },
+          "cost_usd": 0.01,
+          "duration_ms": 12758,
+          "signal_hash": "0xceedb9ed601f42e3c120bf1f8d39db0eac270283ba49d576a490608b2c72c924",
+          "signal_verified": true,
+          "result": {
+            "name": "0x3e0a40c927a4da19e6ececa432adb6adf36a4046",
+            "matched": false,
+            "matches": null,
+            "lists": [
+              "US OFAC SDN and non-SDN Consolidated lists (published 2026-11-13)",
+              "UN Security Council Consolidated List (published 2026-11-15)",
+              "EU Consolidated Financial Sanctions List (published 2026-10-23)",
+              "UK Sanctions List (published 2026-11-12)"
+            ],
+            "match_score": 0
+          },
+          "result_source": "signal",
+          "field_status": {
+            "name": "ok",
+            "matched": "ok",
+            "matches": "missing",
+            "lists": "ok",
+            "match_score": "ok"
+          },
+          "result_shape": "intent",
+          "miner": "Counterproof Sanctions Screener",
+          "receipt_present": true
+        },
+        {
+          "intent": "HONEYPOT_SELL_SIMULATION",
+          "source": "honeypot.is",
+          "judgement": {
+            "verdict": "clean",
+            "reason": "Sell simulation succeeded, sell tax 0%, not a honeypot."
+          },
+          "cost_usd": 0,
+          "duration_ms": 904,
+          "signal_hash": null,
+          "signal_verified": null,
+          "result": {
+            "honeypotResult": {
+              "isHoneypot": false
+            },
+            "simulationResult": {
+              "buyTax": 0,
+              "sellTax": 0,
+              "transferTax": 0,
+              "buyGas": "181679",
+              "sellGas": "140024"
+            },
+            "simulationSuccess": true,
+            "simulationError": null
+          },
+          "raw_response": {
+            "token": {
+              "name": "USD Coin",
+              "symbol": "USDC",
+              "decimals": 6,
+              "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+              "totalHolders": 9197291
+            },
+            "withToken": {
+              "name": "Wrapped Ether",
+              "symbol": "WETH",
+              "decimals": 18,
+              "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+              "totalHolders": 3330614
+            },
+            "summary": {
+              "risk": "low",
+              "riskLevel": 1,
+              "flags": []
+            },
+            "simulationSuccess": true,
+            "honeypotResult": {
+              "isHoneypot": false
+            },
+            "simulationResult": {
+              "buyTax": 0,
+              "sellTax": 0,
+              "transferTax": 0,
+              "buyGas": "181679",
+              "sellGas": "140024"
+            },
+            "flags": [],
+            "contractCode": {
+              "openSource": true,
+              "rootOpenSource": true,
+              "isProxy": true,
+              "hasProxyCalls": true
+            },
+            "chain": {
+              "id": "1",
+              "name": "Ethereum",
+              "shortName": "eth",
+              "currency": "ETH"
+            },
+            "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+            "pair": {
+              "pair": {
+                "name": "Uniswap V3: USDC-WETH",
+                "address": "0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640",
+                "token0": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+                "token1": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+                "type": "UniswapV3"
+              },
+              "chainId": "1",
+              "reserves0": "19649779472688",
+              "reserves1": "31338507639694250688673",
+              "liquidity": 76821475.892189,
+              "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+              "createdAtTimestamp": "1620250931",
+              "creationTxHash": "0x125e0b641d4a4b08806bf52c0c6757648c9963bcda8681e4f996f09e00d4c2cc"
+            },
+            "pairAddress": "0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640"
+          }
+        }
+      ],
+      "decision": {
+        "memo": "REJECT",
+        "preflight": "REJECT",
+        "notes": [
+          "Rejecting leg(s): WASH_TRADING_DETECTION_GENERAL.",
+          "Review leg(s): SECURITY_REVIEW_GENERAL.",
+          "Audit leg is thin: SECURITY_REVIEW on a bare address is not a full Solidity audit. Do not list on this leg alone."
+        ]
+      },
+      "total_cost_usd": 0.04,
+      "receipts_returned": 4
+    },
+    "record_hash": "0x9c22a405f542afc49d338d1ebb27dfb69a1b7bfa0fd2c639288d3bd0d367141b",
+    "anchor_tx_hash": "0x37f969d37c9719a23c098c5bc78a7af287348a6c95cd46058241506302d36f15",
+    "anchor_tx_status": 1,
+    "anchor_gas_used": "14048",
+    "anchor_block": 12148744,
+    "anchored_at_utc": "2026-11-16T17:16:25.026Z",
+    "anchor_note": null,
+    "verify_path": "results/preflight-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.json"
+  }
+}
