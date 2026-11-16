@@ -1,603 +1,1417 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>OneShot — execution integrity, proven on testnet</title>
-<style>
-  :root { --ink:#111; --muted:#5a5a5a; --line:#ddd; --reject:#b3261e; --review:#8a5a00; --clean:#1e7b34; --accent:#1a4fd6; }
-  * { box-sizing:border-box; }
-  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; color:var(--ink); background:#fff; line-height:1.55; }
-  .wrap { max-width:920px; margin:0 auto; padding:32px 20px 64px; }
-  header { border-bottom:2px solid var(--ink); padding-bottom:20px; margin-bottom:28px; }
-  h1 { font-size:34px; margin:0 0 6px; letter-spacing:-0.5px; }
-  .tagline { font-size:17px; color:var(--muted); margin:0; max-width:640px; }
-  .badge { display:inline-block; font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; padding:3px 8px; border-radius:3px; border:1px solid currentColor; vertical-align:middle; }
-  .badge.testnet { color:var(--accent); border-color:var(--accent); }
-  .badge.reject { color:var(--reject); border-color:var(--reject); background:#fdf1f0; }
-  .badge.review { color:var(--review); border-color:var(--review); background:#fff8e6; }
-  .badge.clean { color:var(--clean); border-color:var(--clean); background:#eef7ef; }
-  h2 { font-size:22px; margin:36px 0 10px; }
-  h3 { font-size:16px; margin:22px 0 8px; }
-  p { margin:8px 0; }
-  .trust { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:16px 0 8px; }
-  .trust div { border:1px solid var(--line); border-radius:6px; padding:14px 16px; }
-  .trust h3 { margin:0 0 6px; font-size:15px; }
-  .trust p { margin:0; font-size:14px; color:var(--muted); }
-  .run { border:1px solid var(--line); border-radius:8px; padding:22px 22px 18px; margin:24px 0 32px; }
-  .run-head { display:flex; flex-wrap:wrap; align-items:baseline; gap:10px; margin-bottom:4px; }
-  .run-head h2 { margin:0; }
-  .mono { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:13px; word-break:break-all; }
-  .meta { color:var(--muted); font-size:14px; margin:6px 0 14px; }
-  table { width:100%; border-collapse:collapse; margin:12px 0; font-size:14px; }
-  th, td { text-align:left; padding:9px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
-  th { font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
-  td .mono { font-size:12px; }
-  .leg-reason { color:var(--muted); }
-  .integrity { background:#fafafa; border:1px solid var(--line); border-radius:6px; padding:14px 16px; margin:16px 0; }
-  .integrity p { margin:6px 0; font-size:14px; }
-  .integrity .label { font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
-  a { color:var(--accent); }
-  pre { background:#111; color:#e8e8e8; padding:16px; border-radius:6px; overflow-x:auto; font-size:12.5px; line-height:1.5; margin:12px 0; }
-  details { margin:14px 0; }
-  details summary { cursor:pointer; font-weight:600; font-size:14px; }
-  details pre { background:#f7f7f7; color:#222; border:1px solid var(--line); }
-  .note { background:#fff8e6; border:1px solid #e8d9a0; border-radius:6px; padding:12px 16px; font-size:14px; margin:18px 0; }
-  .tryit { border:1px solid var(--ink); border-radius:8px; padding:22px; margin:28px 0 8px; }
-  .tryit h2 { margin-top:0; }
-  .tryit form { display:flex; flex-wrap:wrap; gap:10px; margin:14px 0; }
-  .tryit input[type=text] { flex:1 1 340px; padding:10px 12px; font-size:15px; border:1px solid var(--line); border-radius:6px; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
-  .tryit select { padding:10px 12px; font-size:15px; border:1px solid var(--line); border-radius:6px; background:#fff; }
-  .tryit button { padding:10px 18px; font-size:15px; font-weight:700; color:#fff; background:var(--ink); border:1px solid var(--ink); border-radius:6px; cursor:pointer; }
-  .tryit button:disabled { opacity:.5; cursor:default; }
-  .tryit .hint { font-size:13px; color:var(--muted); }
-  .progress { list-style:none; margin:12px 0; padding:0; }
-  .progress li { padding:3px 0; border-bottom:1px dashed #eee; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:12.5px; word-break:break-all; color:var(--muted); }
-  .err { background:#fdf1f0; border:1px solid #e8b4b0; color:var(--reject); border-radius:6px; padding:12px 16px; font-size:14px; margin:14px 0; }
-  .statusline { font-size:14px; font-weight:600; margin:10px 0 0; }
-  footer { border-top:1px solid var(--line); margin-top:40px; padding-top:16px; color:var(--muted); font-size:14px; }
-  @media (max-width:640px) {
-    .trust { grid-template-columns:1fr; }
-    h1 { font-size:28px; }
-    .run { padding:16px; }
-    table, thead, tbody, th, td, tr { display:block; }
-    thead { display:none; }
-    tr { border:1px solid var(--line); border-radius:6px; margin:0 0 12px; padding:6px 0; }
-    td { border-bottom:none; padding:6px 12px; }
-    td::before { content:attr(data-label); display:block; font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin-bottom:2px; }
-    pre { white-space:pre-wrap; word-break:break-all; }
-  }
-</style>
-</head>
-<body>
-<div class="wrap">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OneShot — Live Demo</title>
+    <meta
+      name="description"
+      content="A preflight check for token listings. Real checks, real receipts, proven on-chain."
+    />
+    <meta property="og:title" content="OneShot — Live Demo" />
+    <meta
+      property="og:description"
+      content="A preflight check for token listings. Real checks, real receipts, proven on-chain."
+    />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #f8fafa;
+        --surface: #ffffff;
+        --surface-muted: #f1f4f4;
+        --ink: #11181a;
+        --ink-secondary: #435054;
+        --ink-muted: #606e72;
+        --border: #dce3e3;
+        --border-strong: #c2cdcd;
+        --accent: #0f5c5e;
+        --accent-hover: #0a4648;
+        --accent-tint: #ebf4f4;
+        --accent-border: #b6d4d4;
+        --pass-ink: #0e624d;
+        --pass-bg: #ecf6f3;
+        --pass-border: #b7dbd1;
+        --review-ink: #8a5108;
+        --review-bg: #fdf6ea;
+        --review-border: #e8cda0;
+        --reject-ink: #a12323;
+        --reject-bg: #fdf1f1;
+        --reject-border: #ebc2c2;
+        --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      }
 
-<header>
-  <h1>OneShot</h1>
-  <p class="tagline">A preflight check for listing a token — where the verdict itself is proven. Every run is written into a single record, hashed, and anchored on-chain, so anyone can check that the answer you see is the answer the checks actually produced. <span class="badge testnet">Sepolia testnet</span></p>
-</header>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
 
-<section class="tryit" id="try-it">
-  <h2>Try it live</h2>
-  <p>Run a real preflight yourself — four paid Telegraph checks, a honeypot sell simulation, a DexScreener cross-check, then the execution record hashed and anchored on Sepolia. <span class="badge testnet">Sepolia testnet</span></p>
-  <form id="run-form">
-    <input type="text" id="token-input" value="0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48" spellcheck="false" autocomplete="off" aria-label="Token contract address">
-    <select id="chain-select" aria-label="Chain">
-      <option value="ethereum" selected>ethereum</option>
-      <option value="polygon">polygon</option>
-      <option value="arbitrum">arbitrum</option>
-      <option value="base">base</option>
-    </select>
-    <button type="submit" id="run-button">Run preflight</button>
-  </form>
-  <p class="hint">Each run costs $0.04 testnet USDC and takes about a minute. To keep the demo wallet alive: 1 run per 5 minutes per visitor, 20 runs a day, one run at a time. The first run can take a little longer — the free demo server wakes up on demand.</p>
-  <p class="statusline" id="run-status" hidden></p>
-  <ul class="progress" id="run-progress" hidden></ul>
-  <div class="err" id="run-error" hidden></div>
-  <div id="run-result"></div>
-  <div id="recent-runs">
-    <h3>Recent runs on this demo</h3>
-    <p class="hint" id="recent-runs-note">Loading…</p>
-    <div id="recent-runs-list"></div>
-  </div>
-</section>
+      html {
+        -webkit-text-size-adjust: 100%;
+      }
 
-<section>
-  <h2>Three kinds of trust</h2>
-  <p>Telegraph proves the checks were bought. OneShot proves the verdict is honest. That takes three things, and every run below shows all three.</p>
-  <div class="trust">
-    <div>
-      <h3>1. Data cross-checked</h3>
-      <p>The numbers are checked against independent sources — DexScreener for liquidity, honeypot.is for sellability — so one wrong answer from one miner does not pass unnoticed.</p>
-    </div>
-    <div>
-      <h3>2. Answer verified</h3>
-      <p>Every paid check comes back with a receipt (a signal hash). Anyone can fetch that receipt from the Telegraph node and see the exact result the miner returned.</p>
-    </div>
-    <div>
-      <h3>3. Execution proven</h3>
-      <p>The whole run — legs, results, verdict, cost — is written into one record, hashed with SHA-256, and the hash is anchored on Sepolia. Runs are numbered in order, so none can be silently re-rolled or rewritten. <code>node verify.js</code> re-checks all of it.</p>
-    </div>
-  </div>
-</section>
+      body {
+        margin: 0;
+        background-color: var(--bg);
+        color: var(--ink);
+        font-family: var(--font-sans);
+        font-size: 15px;
+        line-height: 1.55;
+        -webkit-font-smoothing: antialiased;
+      }
 
-<section>
-  <h2>Two real runs</h2>
-  <p>Both runs are on Sepolia testnet, paid in testnet USDC ($0.04 each, 4 paid checks). Both verdicts are <strong>REJECT</strong>. Nothing here was listed. That is the honest result the evidence produced — and the point is that the record proves it, whichever way the verdict falls.</p>
+      a {
+        color: var(--accent);
+        text-decoration: underline;
+        text-underline-offset: 3px;
+        text-decoration-thickness: 1px;
+      }
 
-  <!-- RUN 1 : USDC -->
-  <article class="run" id="run-usdc">
-    <div class="run-head">
-      <h2>Run #4 — USDC</h2>
-      <span class="badge reject">REJECT / REJECT</span>
-    </div>
-    <p class="meta">Token <span class="mono">0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48</span> on ethereum &middot; Run at 2026-11-16T17:15:47.369Z &middot; Cost $0.04 testnet USDC (4 of 5 paid calls returned a receipt)</p>
-    <p>Mission 01 (Exchange) verdict: <strong>REJECT</strong> &middot; Mission 14 (Web3 Native &amp; DeFi) verdict: <strong>REJECT</strong></p>
-    <p>The wash-trading miner flagged the token: the USDC/USDT pool on the “metric” DEX showed 81% wash volume ($148.76M of volume against $5.66M of liquidity, buys and sells almost equal at 750 vs 828). The liquidity figure itself checked out against DexScreener. The security review was thin, and the token is not a honeypot — but one rejecting leg rejects the run.</p>
+      a:hover {
+        color: var(--accent-hover);
+      }
 
-    <h3>Legs</h3>
-    <table>
-      <thead><tr><th>Check</th><th>Verdict</th><th>What it found</th><th>Cost</th></tr></thead>
-      <tbody>
-        <tr>
-          <td data-label="Check">WASH_TRADING_DETECTION_GENERAL<br><span class="mono">0x167d47626325c469280ae780fc9ddfe8dc868d69e8e65c375bf5ff2a57acddd6</span></td>
-          <td data-label="Verdict"><span class="badge reject">REJECT</span></td>
-          <td data-label="What it found">Wash-trading verdict <em>likely_wash_trading</em>, wash volume 81%. USDC/USDT on metric (ethereum): 24h volume $148.76M is 26.3x the pool’s $5.66M liquidity; buys and sells almost equal (750 vs 828), as round-trip trading leaves them.</td>
-          <td data-label="Cost">$0.01<br>16,011 ms<br>receipt verified</td>
-        </tr>
-        <tr>
-          <td data-label="Check">SECURITY_REVIEW_GENERAL<br><span class="mono">0x6b9bd9f290814c6dc574e819c3764d7f13771ebcd1d3b196a04a6fa7b2adf169</span></td>
-          <td data-label="Verdict"><span class="badge review">REVIEW</span></td>
-          <td data-label="What it found">Security review said Secure, but vulnerability_count and issues came back missing — the review was thin (the miner scanned the address string, not contract code). This is not a full audit.</td>
-          <td data-label="Cost">$0.01<br>14,790 ms<br>receipt verified</td>
-        </tr>
-        <tr>
-          <td data-label="Check">LIQUIDITY_DEPTH_VERIFY_GENERAL<br><span class="mono">0x16ebd4c96abecce8c9f89f2e706f01df6991353f841f0a26efc0bfd922f1c192</span></td>
-          <td data-label="Verdict"><span class="badge clean">CLEAN</span></td>
-          <td data-label="What it found">Liquidity $76,761,151.71. DexScreener cross-check: confirmed-by-pair — the token-endpoint top pair ($5,662,893.13) disagreed, but the exact pool on DexScreener holds $76,845,014.35, within 10x of Telegraph $76,761,151.71.</td>
-          <td data-label="Cost">$0.01<br>15,014 ms<br>receipt verified</td>
-        </tr>
-        <tr>
-          <td data-label="Check">SANCTIONS_SCREENING_MATCH_GENERAL<br><span class="mono">0xceedb9ed601f42e3c120bf1f8d39db0eac270283ba49d576a490608b2c72c924</span></td>
-          <td data-label="Verdict"><span class="badge clean">CLEAN</span></td>
-          <td data-label="What it found">No sanctions match (score 0). Checked against US OFAC SDN, UN Security Council, EU consolidated and UK sanctions lists.</td>
-          <td data-label="Cost">$0.01<br>12,758 ms<br>receipt verified</td>
-        </tr>
-        <tr>
-          <td data-label="Check">HONEYPOT_SELL_SIMULATION<br><span class="leg-reason">honeypot.is (free, no Telegraph payment)</span></td>
-          <td data-label="Verdict"><span class="badge clean">CLEAN</span></td>
-          <td data-label="What it found">Sell simulation succeeded, sell tax 0%, buy tax 0%, not a honeypot.</td>
-          <td data-label="Cost">$0.00<br>904 ms</td>
-        </tr>
-      </tbody>
-    </table>
+      button,
+      input,
+      select {
+        font: inherit;
+      }
 
-    <div class="integrity">
-      <p><span class="label">Execution record hash (SHA-256)</span><br><span class="mono">0x9c22a405f542afc49d338d1ebb27dfb69a1b7bfa0fd2c639288d3bd0d367141b</span></p>
-      <p><span class="label">Anchor tx (Sepolia)</span><br><a class="mono" href="https://sepolia.etherscan.io/tx/0x37f969d37c9719a23c098c5bc78a7af287348a6c95cd46058241506302d36f15">0x37f969d37c9719a23c098c5bc78a7af287348a6c95cd46058241506302d36f15</a><br>gas used: 14,048 &middot; block 12,148,744</p>
-      <p><span class="label">Verify it yourself</span><br><span class="mono">node verify.js results/preflight-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.json</span></p>
-    </div>
+      :focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
 
-    <h3>Verify output</h3>
-    <pre>OneShot verify — results/preflight-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.json
-Record: 0x9c22a405f542afc49d338d1ebb27dfb69a1b7bfa0fd2c639288d3bd0d367141b (run #4, 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48 on ethereum, 2026-11-16T17:15:47.369Z)
+      .mono {
+        font-family: var(--font-mono);
+        font-variant-numeric: tabular-nums;
+      }
 
-[PASS] record-hash: Canonical SHA-256 of the record matches the stored hash (0x9c22a405f542afc49d338d1ebb27dfb69a1b7bfa0fd2c639288d3bd0d367141b).
-[PASS] anchor: Anchor tx 0x37f969d37c9719a23c098c5bc78a7af287348a6c95cd46058241506302d36f15 is on Sepolia (block 12148744), calldata is exactly the record hash, receipt succeeded.
-[PASS] signals: 4 signal(s) re-fetched from the Telegraph node, all verified, all results match the record.
-[PASS] verdict: Re-derived verdict matches the record: REJECT / REJECT.
-[PASS] honeypot-freshness: honeypot.is still agrees with the record (clean).
+      .page {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 36px 24px 56px;
+      }
 
-PASS — the execution record is proven.</pre>
+      /* 1. Header */
+      .site-header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px 32px;
+        padding-bottom: 28px;
+        border-bottom: 1px solid var(--border);
+      }
 
-    <details>
-      <summary>Full memo (as produced by the run)</summary>
-      <pre># OneShot execution record — 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48 on ethereum
+      .brand-block {
+        max-width: 68ch;
+      }
 
-Network: Sepolia testnet (eip155:11155111) — testnet result, not mainnet.
-Mission 01 (Exchange) verdict: **REJECT**
-Mission 14 (Web3 Native &amp; DeFi) verdict: **REJECT**
+      .site-title {
+        margin: 0;
+        font-size: clamp(1.75rem, 2.8vw, 2.25rem);
+        font-weight: 700;
+        letter-spacing: -0.025em;
+        line-height: 1.15;
+        color: var(--ink);
+      }
 
-Total cost: $0.04 testnet USDC (4 of 5 paid calls returned a receipt).
+      .site-tagline {
+        margin: 8px 0 0;
+        font-size: 1rem;
+        color: var(--ink-secondary);
+        text-wrap: balance;
+      }
 
-## WASH_TRADING_DETECTION_GENERAL
-- Leg verdict: REJECT — Wash-trading verdict likely_wash_trading, wash volume 81%.
-- Cost: $0.01 — 16011 ms — signal_hash: 0x167d47626325c469280ae780fc9ddfe8dc868d69e8e65c375bf5ff2a57acddd6
-- Receipt verified: yes
-- Result: {"subject":"0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48","verdict":"likely_wash_trading","wash_volume_pct":81,"signals":["24h volume $148.76M is 26.3x the pool's $5.66M liquidity","Buys and sells are almost equal (750 vs 828), as round-trip trading leaves them"],"summary":"The USDC/USDT on metric (ethereum) pool shows signs of wash trading. An estimated 81% of its volume is above a generous organic turnover of 5x liquidity a day."}
+      .network-badge {
+        display: inline-block;
+        padding: 5px 10px;
+        font-family: var(--font-mono);
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--accent);
+        background-color: var(--accent-tint);
+        border: 1px solid var(--accent-border);
+        border-radius: 3px;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
 
-## SECURITY_REVIEW_GENERAL
-- Leg verdict: REVIEW — Security review said Secure, but vulnerability_count and issues came back missing — the review was thin (the miner scanned the address string, not contract code). This is not a full audit.
-- Cost: $0.01 — 14790 ms — signal_hash: 0x6b9bd9f290814c6dc574e819c3764d7f13771ebcd1d3b196a04a6fa7b2adf169
-- Receipt verified: yes
-- Result: {"verdict":"Secure","vulnerability_count":null,"issues":null,"summary":"Verdict: secure. No injection, eval, shell, deserialization, TLS, path, SSRF, XSS or hardcoded-secret patterns in 1 line scanned."}
+      /* Sections */
+      .section {
+        padding: 36px 0;
+        border-bottom: 1px solid var(--border);
+      }
 
-## LIQUIDITY_DEPTH_VERIFY_GENERAL
-- Leg verdict: CLEAN — Liquidity $76,761,151.71.
-- Cost: $0.01 — 15014 ms — signal_hash: 0x16ebd4c96abecce8c9f89f2e706f01df6991353f841f0a26efc0bfd922f1c192
-- Receipt verified: yes
-- Result: {"liquidity_usd":76761151.71}
-- DexScreener cross-check: confirmed-by-pair — Token-endpoint top pair ($5,662,893.13) disagreed, but the exact pool on DexScreener holds $76,845,014.35, within 10x of Telegraph $76,761,151.71.
+      .section-header {
+        margin-bottom: 20px;
+      }
 
-## SANCTIONS_SCREENING_MATCH_GENERAL
-- Leg verdict: CLEAN — No sanctions match (score 0).
-- Cost: $0.01 — 12758 ms — signal_hash: 0xceedb9ed601f42e3c120bf1f8d39db0eac270283ba49d576a490608b2c72c924
-- Receipt verified: yes
-- Result: {"name":"0x3e0a40c927a4da19e6ececa432adb6adf36a4046","matched":false,"matches":null,"lists":["US OFAC SDN and non-SDN Consolidated lists (published 2026-11-13)","UN Security Council Consolidated List (published 2026-11-15)","EU Consolidated Financial Sanctions List (published 2026-10-23)","UK Sanctions List (published 2026-11-12)"],"match_score":0}
+      .section-title {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 600;
+        letter-spacing: -0.015em;
+        color: var(--ink);
+      }
 
-## HONEYPOT_SELL_SIMULATION
-- Leg verdict: CLEAN — Sell simulation succeeded, sell tax 0%, not a honeypot.
-- Source: honeypot.is (free check, no Telegraph payment)
-- Receipt verified: not checked
-- Result: isHoneypot=false, sellTax=0%, buyTax=0%, simulationSuccess=true
+      .section-note {
+        margin: 6px 0 0;
+        font-size: 14px;
+        color: var(--ink-muted);
+      }
 
-## Notes
-- Rejecting leg(s): WASH_TRADING_DETECTION_GENERAL.
-- Review leg(s): SECURITY_REVIEW_GENERAL.
-- Audit leg is thin: SECURITY_REVIEW on a bare address is not a full Solidity audit. Do not list on this leg alone.
+      /* 2. Try it live form */
+      .preflight-form {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 170px auto;
+        gap: 12px;
+        align-items: end;
+      }
 
-## Execution integrity — OneShot
-- Execution record hash (SHA-256): 0x9c22a405f542afc49d338d1ebb27dfb69a1b7bfa0fd2c639288d3bd0d367141b
-- Run sequence: #4
-- Anchor tx (Sepolia): 0x37f969d37c9719a23c098c5bc78a7af287348a6c95cd46058241506302d36f15
-- Anchor: https://sepolia.etherscan.io/tx/0x37f969d37c9719a23c098c5bc78a7af287348a6c95cd46058241506302d36f15 (gas used: 14048, block 12148744)
-- Verify it yourself: node verify.js results/preflight-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.json
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 0;
+      }
 
-Run at: 2026-11-16T17:15:47.369Z — wallet: 0x3E0A40c927a4dA19e6eceCa432adb6ADf36A4046 (testnet only).</pre>
-    </details>
-  </article>
+      .field-label {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--ink-secondary);
+      }
 
-  <!-- RUN 2 : HNP -->
-  <article class="run" id="run-hnp">
-    <div class="run-head">
-      <h2>Run #5 — HNP (HoneyPot)</h2>
-      <span class="badge reject">REJECT / REJECT</span>
-    </div>
-    <p class="meta">Token <span class="mono">0x52a7ed336eec9580bb9cc87e5bb8d5a35b844029</span> on ethereum &middot; Run at 2026-11-16T17:18:21.255Z &middot; Cost $0.04 testnet USDC (4 of 5 paid calls returned a receipt)</p>
-    <p>Mission 01 (Exchange) verdict: <strong>REJECT</strong> &middot; Mission 14 (Web3 Native &amp; DeFi) verdict: <strong>REJECT</strong></p>
-    <p>The honeypot check caught what no Telegraph intent flags: the sell simulation fails — the token cannot be proven sellable (“revert: HP: BUY_FAILED”). The liquidity miner also returned a figure that does not hold up: $1,182,265,866.03 for a token the wash leg says has no DEX market at all. Both the consistency check and the DexScreener cross-check flagged it, and the leg was downgraded to review.</p>
+      .input,
+      .select {
+        width: 100%;
+        height: 42px;
+        padding: 0 12px;
+        background-color: var(--surface);
+        color: var(--ink);
+        border: 1px solid var(--border-strong);
+        border-radius: 4px;
+        transition: border-color 150ms ease;
+      }
 
-    <h3>Legs</h3>
-    <table>
-      <thead><tr><th>Check</th><th>Verdict</th><th>What it found</th><th>Cost</th></tr></thead>
-      <tbody>
-        <tr>
-          <td data-label="Check">WASH_TRADING_DETECTION_GENERAL<br><span class="mono">0x351e48eaadd207181f5f2c9187f7a7002af902427631398851ceaf0af8daf845</span></td>
-          <td data-label="Verdict"><span class="badge review">REVIEW</span></td>
-          <td data-label="What it found">Wash-trading check was inconclusive. No DEX market found for this token. Not a clean pass.</td>
-          <td data-label="Cost">$0.01<br>21,262 ms<br>receipt verified</td>
-        </tr>
-        <tr>
-          <td data-label="Check">SECURITY_REVIEW_GENERAL<br><span class="mono">0xedaba21ca7eee59042a21b1d490dedae6826e11f707225b413941cb6c8f257ae</span></td>
-          <td data-label="Verdict"><span class="badge review">REVIEW</span></td>
-          <td data-label="What it found">Security review said Secure, but vulnerability_count and issues came back missing — the review was thin (the miner scanned the address string, not contract code). This is not a full audit.</td>
-          <td data-label="Cost">$0.01<br>19,470 ms<br>receipt verified</td>
-        </tr>
-        <tr>
-          <td data-label="Check">LIQUIDITY_DEPTH_VERIFY_GENERAL<br><span class="mono">0xbce96eae0c3aacf2238d368fe2be76474978e31ac20697a219f05c60edefe71a</span></td>
-          <td data-label="Verdict"><span class="badge review">REVIEW</span></td>
-          <td data-label="What it found">Liquidity figure $1,182,265,866.03 conflicts with the wash leg, which found no DEX market for this token — the figure is not trusted. DexScreener cross-check: conflicting-no-market.</td>
-          <td data-label="Cost">$0.01<br>26,576 ms<br>receipt verified</td>
-        </tr>
-        <tr>
-          <td data-label="Check">SANCTIONS_SCREENING_MATCH_GENERAL<br><span class="mono">0xad510640ba6fd8177990fedf6049a0579bce8518dee70f8c9379df304b55ca53</span></td>
-          <td data-label="Verdict"><span class="badge clean">CLEAN</span></td>
-          <td data-label="What it found">No sanctions match (score 0). Checked against US OFAC SDN, UN Security Council, EU consolidated and UK sanctions lists.</td>
-          <td data-label="Cost">$0.01<br>18,182 ms<br>receipt verified</td>
-        </tr>
-        <tr>
-          <td data-label="Check">HONEYPOT_SELL_SIMULATION<br><span class="leg-reason">honeypot.is (free, no Telegraph payment)</span></td>
-          <td data-label="Verdict"><span class="badge reject">REJECT</span></td>
-          <td data-label="What it found">Sell simulation failed (execution reverted: “revert: HP: BUY_FAILED”) — the token could not be proven sellable.</td>
-          <td data-label="Cost">$0.00<br>806 ms</td>
-        </tr>
-      </tbody>
-    </table>
+      .input {
+        font-family: var(--font-mono);
+        font-size: 13.5px;
+      }
 
-    <div class="integrity">
-      <p><span class="label">Execution record hash (SHA-256)</span><br><span class="mono">0x37a2c018e0e2a27cb9f887f42509afffac7f166a6e9172903c07cae6e6d744ed</span></p>
-      <p><span class="label">Anchor tx (Sepolia)</span><br><a class="mono" href="https://sepolia.etherscan.io/tx/0x8f0ab3d37892cf6d1abf42e09503ff50ec2e1a79014dac5221a00b46cb392d98">0x8f0ab3d37892cf6d1abf42e09503ff50ec2e1a79014dac5221a00b46cb392d98</a><br>gas used: 14,048 &middot; block 12,148,753</p>
-      <p><span class="label">Verify it yourself</span><br><span class="mono">node verify.js results/preflight-0x52a7ed336eec9580bb9cc87e5bb8d5a35b844029.json</span></p>
-    </div>
+      .input::placeholder {
+        color: #889497;
+      }
 
-    <h3>Verify output</h3>
-    <pre>OneShot verify — results/preflight-0x52a7ed336eec9580bb9cc87e5bb8d5a35b844029.json
-Record: 0x37a2c018e0e2a27cb9f887f42509afffac7f166a6e9172903c07cae6e6d744ed (run #5, 0x52a7ed336eec9580bb9cc87e5bb8d5a35b844029 on ethereum, 2026-11-16T17:18:21.255Z)
+      .input:focus,
+      .select:focus {
+        border-color: var(--accent);
+        outline: 2px solid var(--accent);
+        outline-offset: -1px;
+      }
 
-[PASS] record-hash: Canonical SHA-256 of the record matches the stored hash (0x37a2c018e0e2a27cb9f887f42509afffac7f166a6e9172903c07cae6e6d744ed).
-[PASS] anchor: Anchor tx 0x8f0ab3d37892cf6d1abf42e09503ff50ec2e1a79014dac5221a00b46cb392d98 is on Sepolia (block 12148753), calldata is exactly the record hash, receipt succeeded.
-[PASS] signals: 4 signal(s) re-fetched from the Telegraph node, all verified, all results match the record.
-[PASS] verdict: Re-derived verdict matches the record: REJECT / REJECT.
-[PASS] honeypot-freshness: honeypot.is still agrees with the record (reject).
+      .btn-primary {
+        height: 42px;
+        padding: 0 20px;
+        background-color: var(--accent);
+        color: #ffffff;
+        font-weight: 600;
+        font-size: 14px;
+        border: 1px solid var(--accent);
+        border-radius: 4px;
+        cursor: pointer;
+        white-space: nowrap;
+        flex-shrink: 0;
+        transition: background-color 150ms ease, border-color 150ms ease;
+      }
 
-PASS — the execution record is proven.</pre>
+      .btn-primary:hover:not(:disabled) {
+        background-color: var(--accent-hover);
+        border-color: var(--accent-hover);
+      }
 
-    <details>
-      <summary>Full memo (as produced by the run)</summary>
-      <pre># OneShot execution record — 0x52a7ed336eec9580bb9cc87e5bb8d5a35b844029 on ethereum
+      .btn-primary:disabled {
+        opacity: 0.65;
+        cursor: wait;
+      }
 
-Network: Sepolia testnet (eip155:11155111) — testnet result, not mainnet.
-Mission 01 (Exchange) verdict: **REJECT**
-Mission 14 (Web3 Native &amp; DeFi) verdict: **REJECT**
+      .form-hint {
+        margin: 10px 0 0;
+        font-size: 13px;
+        color: var(--ink-muted);
+      }
 
-Total cost: $0.04 testnet USDC (4 of 5 paid calls returned a receipt).
+      /* Status / Progress / Error */
+      .status-banner {
+        margin-top: 20px;
+        padding: 12px 14px;
+        border-radius: 4px;
+        font-size: 14px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px 16px;
+      }
 
-## WASH_TRADING_DETECTION_GENERAL
-- Leg verdict: REVIEW — Wash-trading check was inconclusive. Not a clean pass.
-- Cost: $0.01 — 21262 ms — signal_hash: 0x351e48eaadd207181f5f2c9187f7a7002af902427631398851ceaf0af8daf845
-- Receipt verified: yes
-- Result: {"subject":"0x52a7ed336eec9580bb9cc87e5bb8d5a35b844029","verdict":"inconclusive","wash_volume_pct":null,"signals":null,"summary":"No DEX market found for 0x52a7ed336eec9580bb9cc87e5bb8d5a35b844029."}
+      .status-progress {
+        background-color: var(--accent-tint);
+        border: 1px solid var(--accent-border);
+        color: var(--ink);
+      }
 
-## SECURITY_REVIEW_GENERAL
-- Leg verdict: REVIEW — Security review said Secure, but vulnerability_count and issues came back missing — the review was thin (the miner scanned the address string, not contract code). This is not a full audit.
-- Cost: $0.01 — 19470 ms — signal_hash: 0xedaba21ca7eee59042a21b1d490dedae6826e11f707225b413941cb6c8f257ae
-- Receipt verified: yes
-- Result: {"verdict":"Secure","vulnerability_count":null,"issues":null,"summary":"Verdict: secure. No injection, eval, shell, deserialization, TLS, path, SSRF, XSS or hardcoded-secret patterns in 1 line scanned."}
+      .status-error {
+        background-color: var(--reject-bg);
+        border: 1px solid var(--reject-border);
+        color: var(--reject-ink);
+      }
 
-## LIQUIDITY_DEPTH_VERIFY_GENERAL
-- Leg verdict: REVIEW — Liquidity figure $1,182,265,866.03 conflicts with the wash leg, which found no DEX market for this token — the figure is not trusted.
-- Cost: $0.01 — 26576 ms — signal_hash: 0xbce96eae0c3aacf2238d368fe2be76474978e31ac20697a219f05c60edefe71a
-- Receipt verified: yes
-- Result: {"liquidity_usd":1182265866.03}
-- DexScreener cross-check: conflicting-no-market
-- Consistency flag: conflicts with wash leg (no DEX market found)
+      .elapsed-timer {
+        font-family: var(--font-mono);
+        font-size: 12.5px;
+        color: var(--ink-secondary);
+        font-variant-numeric: tabular-nums;
+      }
 
-## SANCTIONS_SCREENING_MATCH_GENERAL
-- Leg verdict: CLEAN — No sanctions match (score 0).
-- Cost: $0.01 — 18182 ms — signal_hash: 0xad510640ba6fd8177990fedf6049a0579bce8518dee70f8c9379df304b55ca53
-- Receipt verified: yes
-- Result: {"name":"0x3e0a40c927a4da19e6ececa432adb6adf36a4046","matched":false,"matches":null,"lists":["US OFAC SDN and non-SDN Consolidated lists (published 2026-11-13)","UN Security Council Consolidated List (published 2026-11-15)","EU Consolidated Financial Sanctions List (published 2026-10-23)","UK Sanctions List (published 2026-11-12)"],"match_score":0}
+      /* Live Result Console */
+      .result-container {
+        margin-top: 28px;
+        padding-top: 24px;
+        border-top: 1px solid var(--border);
+      }
 
-## HONEYPOT_SELL_SIMULATION
-- Leg verdict: REJECT — Sell simulation failed (execution reverted: "revert: HP: BUY_FAILED") — the token could not be proven sellable.
-- Source: honeypot.is (free check, no Telegraph payment)
-- Receipt verified: not checked
-- Result: isHoneypot=?, sellTax=?, buyTax=?, simulationSuccess=false, error: execution reverted: "revert: HP: BUY_FAILED"
+      .verdict-row {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        margin-bottom: 20px;
+      }
 
-## Notes
-- Rejecting leg(s): HONEYPOT_SELL_SIMULATION.
-- Review leg(s): WASH_TRADING_DETECTION_GENERAL, SECURITY_REVIEW_GENERAL, LIQUIDITY_DEPTH_VERIFY_GENERAL.
-- Audit leg is thin: SECURITY_REVIEW on a bare address is not a full Solidity audit. Do not list on this leg alone.
+      .verdict-box {
+        padding: 16px 18px;
+        background-color: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+      }
 
-## Execution integrity — OneShot
-- Execution record hash (SHA-256): 0x37a2c018e0e2a27cb9f887f42509afffac7f166a6e9172903c07cae6e6d744ed
-- Run sequence: #5
-- Anchor tx (Sepolia): 0x8f0ab3d37892cf6d1abf42e09503ff50ec2e1a79014dac5221a00b46cb392d98
-- Anchor: https://sepolia.etherscan.io/tx/0x8f0ab3d37892cf6d1abf42e09503ff50ec2e1a79014dac5221a00b46cb392d98 (gas used: 14048, block 12148753)
-- Verify it yourself: node verify.js results/preflight-0x52a7ed336eec9580bb9cc87e5bb8d5a35b844029.json
+      .verdict-box.tone-pass {
+        background-color: var(--pass-bg);
+        border-color: var(--pass-border);
+      }
 
-Run at: 2026-11-16T17:18:21.255Z — wallet: 0x3E0A40c927a4dA19e6eceCa432adb6ADf36A4046 (testnet only).</pre>
-    </details>
-  </article>
+      .verdict-box.tone-review {
+        background-color: var(--review-bg);
+        border-color: var(--review-border);
+      }
 
-  <div class="note">
-    <strong>Why both runs reject.</strong> A preflight that only ever says “list” proves nothing. USDC was rejected because the wash-trading miner flagged its pool at 81% wash volume; HNP was rejected because it cannot be proven sellable. OneShot records the verdict the evidence actually produced — and the anchor plus <code>verify.js</code> let anyone confirm that record, instead of taking the tool’s word for it.
-  </div>
-</section>
+      .verdict-box.tone-reject {
+        background-color: var(--reject-bg);
+        border-color: var(--reject-border);
+      }
 
-<section>
-  <h2>How it works</h2>
-  <p>OneShot runs four paid Telegraph checks (wash trading, security review, liquidity depth, sanctions screening) for $0.04 testnet USDC, then adds two free checks — a honeypot sell simulation (honeypot.is) and a DexScreener liquidity cross-check — before deciding. After the checks, it builds one canonical execution record, hashes it, and anchors the hash on Sepolia with a 0-value transaction carrying the hash as calldata. No run is anchored if it produced zero receipts.</p>
-  <p>To check a run yourself:</p>
-  <pre>git clone https://github.com/Jr-kenny/telegraph-preflight
-cd telegraph-preflight
-node verify.js results/preflight-0x52a7ed336eec9580bb9cc87e5bb8d5a35b844029.json</pre>
-  <p>The verifier recomputes the record hash, confirms the anchor transaction on Sepolia carries that hash, re-fetches each signal from the Telegraph node and checks the results match the record, re-derives the verdict from the re-fetched evidence, and re-checks the honeypot result against honeypot.is. It exits 0 only if every check passes.</p>
-</section>
+      .verdict-kind {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--ink-secondary);
+      }
 
-<footer>
-  <p>OneShot — built for the Telegraph Hackathon Season II, Missions 01 + 14, Apps track. Testnet only. Every number on this page comes from the two runs above; nothing was invented. Source: <a href="https://github.com/Jr-kenny/telegraph-preflight">github.com/Jr-kenny/telegraph-preflight</a>.</p>
-</footer>
+      .verdict-value {
+        font-family: var(--font-mono);
+        font-size: 1.65rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        line-height: 1;
+      }
 
-</div>
+      .tone-pass .verdict-value {
+        color: var(--pass-ink);
+      }
 
-<script>
-// OneShot live demo — one configurable API base.
-// Local testing: this page is served from localhost, so it calls localhost:3000.
-// Deployed (GitHub Pages): it calls the Render demo service below.
-// Change this one line when the Render URL is final.
-const API_BASE = (location.hostname === "localhost" || location.hostname === "127.0.0.1")
-  ? "http://localhost:3000"
-  : "https://oneshot-demo.onrender.com";
+      .tone-review .verdict-value {
+        color: var(--review-ink);
+      }
 
-const $ = (id) => document.getElementById(id);
-const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-const ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/;
+      .tone-reject .verdict-value {
+        color: var(--reject-ink);
+      }
 
-function verdictBadge(v) {
-  const up = String(v || "").toUpperCase();
-  const cls = up === "REJECT" ? "reject" : up === "REVIEW" ? "review" : "clean";
-  return `<span class="badge ${cls}">${esc(up)}</span>`;
-}
+      .run-meta-strip {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 18px;
+        margin-bottom: 18px;
+        font-size: 13px;
+        color: var(--ink-secondary);
+      }
 
-function legBadge(v) {
-  const up = String(v || "").toUpperCase();
-  const cls = up === "REJECT" ? "reject" : up === "REVIEW" ? "review" : up === "CLEAN" ? "clean" : "review";
-  return `<span class="badge ${cls}">${esc(up)}</span>`;
-}
+      .run-meta-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
 
-function addProgress(line) {
-  const ul = $("run-progress");
-  ul.hidden = false;
-  const li = document.createElement("li");
-  li.textContent = line;
-  ul.appendChild(li);
-}
+      .decision-notes {
+        margin: 0 0 22px;
+        padding: 0 0 0 18px;
+        font-size: 13.5px;
+        color: var(--ink-secondary);
+      }
 
-function showError(msg) {
-  const el = $("run-error");
-  el.hidden = false;
-  el.textContent = msg;
-}
+      .decision-notes li + li {
+        margin-top: 4px;
+      }
 
-function setStatus(msg) {
-  const el = $("run-status");
-  el.hidden = false;
-  el.textContent = msg;
-}
+      .subhead {
+        margin: 24px 0 10px;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--ink);
+      }
 
-function renderResult(r) {
-  const rows = (r.legs || []).map((leg) => {
-    const check = leg.source === "honeypot.is"
-      ? `HONEYPOT_SELL_SIMULATION<br><span class="leg-reason">honeypot.is (free, no Telegraph payment)</span>`
-      : `${esc(leg.intent)}${leg.signal_hash ? `<br><span class="mono">${esc(leg.signal_hash)}</span>` : ""}`;
-    let found = esc(leg.judgement && leg.judgement.reason ? leg.judgement.reason : "");
-    if (leg.cross_check) found += `<br><span class="leg-reason">DexScreener cross-check: ${esc(leg.cross_check.outcome)}${leg.cross_check.note ? ` — ${esc(leg.cross_check.note)}` : ""}</span>`;
-    if (leg.consistency_flag) found += `<br><span class="leg-reason">Consistency flag: ${esc(leg.consistency_flag)}</span>`;
-    const cost = leg.source === "honeypot.is"
-      ? `$0.00<br>${leg.duration_ms ?? "?"} ms`
-      : `$${(leg.cost_usd ?? 0).toFixed(2)}<br>${leg.duration_ms ?? "?"} ms<br>${leg.signal_verified === true ? "receipt verified" : leg.signal_verified === false ? "receipt NOT verified" : "not checked"}`;
-    return `<tr><td data-label="Check">${check}</td><td data-label="Verdict">${legBadge(leg.judgement && leg.judgement.verdict)}</td><td data-label="What it found">${found}</td><td data-label="Cost">${cost}</td></tr>`;
-  }).join("");
+      /* Legs Table */
+      .table-wrap {
+        width: 100%;
+        overflow-x: auto;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        background-color: var(--surface);
+      }
 
-  const verifyBlock = r.verify
-    ? `<h3>Verify output</h3><pre>${esc(r.verify.output || "")}</pre>${r.verify.exitCode !== 0 ? `<p class="err" style="margin-top:10px">Warning: verify.js exited with code ${r.verify.exitCode} — the record did not fully verify. Read the output above.</p>` : ""}`
-    : "";
+      table.legs-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13.5px;
+        text-align: left;
+      }
 
-  $("run-result").innerHTML = `
-    <article class="run">
-      <div class="run-head"><h2>Run #${r.runSeq ?? "?"} — ${esc(r.token.slice(0, 10))}…</h2>${verdictBadge(r.decision && r.decision.memo)} ${verdictBadge(r.decision && r.decision.preflight)}</div>
-      <p class="meta">Token <span class="mono">${esc(r.token)}</span> on ${esc(r.chain)} &middot; Run at ${esc(r.runAt || "")} &middot; Cost $${(r.totalCostUsd ?? 0).toFixed(2)} testnet USDC (${r.receiptsReturned ?? "?"} paid calls returned a receipt)</p>
-      <p>Mission 01 (Exchange) verdict: <strong>${esc(r.decision && r.decision.memo)}</strong> &middot; Mission 14 (Web3 Native &amp; DeFi) verdict: <strong>${esc(r.decision && r.decision.preflight)}</strong></p>
-      <h3>Legs</h3>
-      <table><thead><tr><th>Check</th><th>Verdict</th><th>What it found</th><th>Cost</th></tr></thead><tbody>${rows}</tbody></table>
-      <div class="integrity">
-        <p><span class="label">Execution record hash (SHA-256)</span><br><span class="mono">${esc(r.recordHash || "none")}</span></p>
-        <p><span class="label">Anchor tx (Sepolia)</span><br>${r.anchorTx ? `<a class="mono" href="https://sepolia.etherscan.io/tx/${esc(r.anchorTx)}">${esc(r.anchorTx)}</a><br>gas used: ${esc(r.anchorGasUsed ?? "?")} &middot; block ${esc(r.anchorBlock ?? "?")}` : `not anchored — ${esc(r.anchorNote || "no anchor")}`}</p>
-        <p><span class="label">Verify it yourself</span><br><span class="mono">node verify.js results/preflight-${esc(r.token.toLowerCase())}.json</span></p>
-      </div>
-      ${verifyBlock}
-      ${r.memo ? `<details><summary>Full memo (as produced by the run)</summary><pre>${esc(r.memo)}</pre></details>` : ""}
-    </article>`;
-}
+      .legs-table th {
+        padding: 10px 12px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--ink-secondary);
+        background-color: var(--surface-muted);
+        border-bottom: 1px solid var(--border);
+        white-space: nowrap;
+      }
 
-// Poll one run until it is done or failed (fallback if the stream drops).
-async function pollRun(runId, onProgress) {
-  const deadline = Date.now() + 5 * 60 * 1000;
-  let seen = 0;
-  while (Date.now() < deadline) {
-    const res = await fetch(`${API_BASE}/api/runs/${encodeURIComponent(runId)}`);
-    if (!res.ok) throw new Error("Could not check the run status.");
-    const rec = await res.json();
-    const lines = rec.progress || [];
-    for (let i = seen; i < lines.length; i++) onProgress(lines[i]);
-    seen = lines.length;
-    if (rec.status === "done") return rec.result;
-    if (rec.status === "failed") throw new Error(rec.error || "The run failed.");
-    await new Promise((r) => setTimeout(r, 2000));
-  }
-  throw new Error("The run is still going after 5 minutes. Check back shortly — the record will appear in Recent runs below.");
-}
+      .legs-table td {
+        padding: 11px 12px;
+        border-bottom: 1px solid var(--border);
+        vertical-align: top;
+      }
 
-// Start a run with live progress (SSE). Falls back to polling if the stream drops.
-async function runLive(chain, token) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 6 * 60 * 1000);
-  let runId = null;
-  try {
-    const res = await fetch(`${API_BASE}/api/run`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Accept": "text/event-stream" },
-      body: JSON.stringify({ chain, token }),
-      signal: controller.signal,
-    });
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      throw new Error(body.error || `The server returned ${res.status}.`);
-    }
-    const ct = res.headers.get("content-type") || "";
-    if (!ct.includes("text/event-stream")) {
-      const data = await res.json();
-      if (data.status === "done") return data;
-      throw new Error(data.error || "The run failed.");
-    }
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let buf = "";
-    let result = null;
-    let streamDone = false;
-    while (!streamDone) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buf += decoder.decode(value, { stream: true });
-      let idx;
-      while ((idx = buf.indexOf("\n\n")) >= 0) {
-        const chunk = buf.slice(0, idx);
-        buf = buf.slice(idx + 2);
-        for (const line of chunk.split("\n")) {
-          if (!line.startsWith("data:")) continue;
-          let ev;
-          try { ev = JSON.parse(line.slice(5).trim()); } catch { continue; }
-          if (ev.type === "started") runId = ev.id;
-          else if (ev.type === "progress") addProgress(ev.line);
-          else if (ev.type === "result") result = ev.result;
-          else if (ev.type === "error") throw new Error(ev.error || "The run failed.");
-          else if (ev.type === "done") streamDone = true;
+      .legs-table tbody tr:last-child td {
+        border-bottom: none;
+      }
+
+      .legs-table th.num,
+      .legs-table td.num {
+        text-align: right;
+        white-space: nowrap;
+      }
+
+      .intent-name {
+        font-weight: 600;
+        color: var(--ink);
+      }
+
+      .intent-code {
+        display: block;
+        margin-top: 2px;
+        font-family: var(--font-mono);
+        font-size: 11.5px;
+        color: var(--ink-muted);
+      }
+
+      .verdict-tag {
+        display: inline-block;
+        padding: 2px 7px;
+        font-family: var(--font-mono);
+        font-size: 12px;
+        font-weight: 600;
+        border-radius: 3px;
+        border: 1px solid var(--border);
+        white-space: nowrap;
+      }
+
+      .verdict-tag.tone-pass {
+        color: var(--pass-ink);
+        background-color: var(--pass-bg);
+        border-color: var(--pass-border);
+      }
+
+      .verdict-tag.tone-review {
+        color: var(--review-ink);
+        background-color: var(--review-bg);
+        border-color: var(--review-border);
+      }
+
+      .verdict-tag.tone-reject {
+        color: var(--reject-ink);
+        background-color: var(--reject-bg);
+        border-color: var(--reject-border);
+      }
+
+      .verdict-tag.tone-neutral {
+        color: var(--ink-secondary);
+        background-color: var(--surface-muted);
+        border-color: var(--border);
+      }
+
+      .reason-cell {
+        min-width: 220px;
+        max-width: 420px;
+        color: var(--ink-secondary);
+      }
+
+      .hash-cell {
+        white-space: nowrap;
+      }
+
+      .copy-btn {
+        margin-left: 6px;
+        padding: 1px 6px;
+        font-family: var(--font-sans);
+        font-size: 11.5px;
+        color: var(--accent);
+        background-color: transparent;
+        border: 1px solid var(--border-strong);
+        border-radius: 3px;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+
+      .copy-btn:hover {
+        background-color: var(--accent-tint);
+        border-color: var(--accent-border);
+      }
+
+      /* Proof Ledger (used in Live Result and Two Real Runs) */
+      .ledger {
+        margin: 0;
+        border-top: 1px solid var(--border);
+      }
+
+      .ledger-row {
+        display: grid;
+        grid-template-columns: 190px minmax(0, 1fr);
+        gap: 8px 16px;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--border);
+        font-size: 13.5px;
+      }
+
+      .ledger-row dt {
+        font-weight: 500;
+        color: var(--ink-secondary);
+      }
+
+      .ledger-row dd {
+        margin: 0;
+        color: var(--ink);
+        min-width: 0;
+        overflow-wrap: anywhere;
+      }
+
+      .verify-checks {
+        list-style: none;
+        margin: 10px 0 0;
+        padding: 0;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        background-color: var(--surface);
+      }
+
+      .verify-check-item {
+        display: grid;
+        grid-template-columns: 64px 150px minmax(0, 1fr);
+        gap: 8px 12px;
+        padding: 9px 12px;
+        border-bottom: 1px solid var(--border);
+        font-size: 13px;
+        align-items: start;
+      }
+
+      .verify-check-item:last-child {
+        border-bottom: none;
+      }
+
+      .verify-check-name {
+        font-family: var(--font-mono);
+        font-size: 12.5px;
+        font-weight: 500;
+        color: var(--ink);
+      }
+
+      .verify-check-msg {
+        color: var(--ink-secondary);
+        overflow-wrap: anywhere;
+      }
+
+      .raw-details {
+        margin-top: 16px;
+        font-size: 13px;
+      }
+
+      .raw-details summary {
+        cursor: pointer;
+        color: var(--accent);
+        font-weight: 500;
+      }
+
+      .raw-pre {
+        margin: 10px 0 0;
+        padding: 12px;
+        background-color: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        font-family: var(--font-mono);
+        font-size: 12px;
+        line-height: 1.5;
+        overflow-x: auto;
+        max-height: 360px;
+      }
+
+      /* 3. Two real runs (open stacked ledger sections, no card grid) */
+      .run-showcase + .run-showcase {
+        margin-top: 32px;
+        padding-top: 28px;
+        border-top: 1px solid var(--border-strong);
+      }
+
+      .run-heading-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 10px 20px;
+        margin-bottom: 14px;
+      }
+
+      .run-title {
+        margin: 0;
+        font-size: 1.0625rem;
+        font-weight: 600;
+        color: var(--ink);
+      }
+
+      .run-verdicts-inline {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+        font-size: 13px;
+        color: var(--ink-secondary);
+      }
+
+      .run-findings {
+        margin: 0 0 14px;
+        padding-left: 18px;
+        color: var(--ink);
+        font-size: 14px;
+      }
+
+      .run-findings li + li {
+        margin-top: 5px;
+      }
+
+      /* 4. Footer */
+      .site-footer {
+        padding-top: 28px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px 24px;
+        font-size: 13px;
+        color: var(--ink-muted);
+      }
+
+      .site-footer p {
+        margin: 0;
+      }
+
+      @media (max-width: 720px) {
+        .page {
+          padding: 24px 16px 44px;
+        }
+
+        .preflight-form {
+          grid-template-columns: 1fr;
+        }
+
+        .verdict-row {
+          grid-template-columns: 1fr;
+        }
+
+        .ledger-row {
+          grid-template-columns: 1fr;
+          gap: 3px;
+        }
+
+        .verify-check-item {
+          grid-template-columns: 64px minmax(0, 1fr);
+        }
+
+        .verify-check-msg {
+          grid-column: 1 / -1;
         }
       }
-    }
-    if (result) return result;
-    if (runId) return await pollRun(runId, addProgress);
-    throw new Error("The connection dropped before the run finished.");
-  } catch (e) {
-    if (e.name === "AbortError") {
-      if (runId) return await pollRun(runId, addProgress);
-      throw new Error("The request timed out — the demo server may be waking up. Try again in a minute.");
-    }
-    throw e;
-  } finally {
-    clearTimeout(timeout);
-  }
-}
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <!-- 1. Header -->
+      <header class="site-header">
+        <div class="brand-block">
+          <h1 class="site-title">OneShot</h1>
+          <p class="site-tagline">
+            A preflight check for token listings. Real checks, real receipts, proven on-chain.
+          </p>
+        </div>
+        <span class="network-badge">Testnet — Sepolia</span>
+      </header>
 
-async function loadRecentRuns() {
-  try {
-    const res = await fetch(`${API_BASE}/api/runs`, { signal: AbortSignal.timeout(15000) });
-    if (!res.ok) throw new Error("bad status");
-    const data = await res.json();
-    const list = data.runs || [];
-    if (!list.length) {
-      $("recent-runs-note").textContent = "No runs on this demo server yet — yours could be the first.";
-      $("recent-runs-list").innerHTML = "";
-      return;
-    }
-    $("recent-runs-note").textContent = "";
-    $("recent-runs-list").innerHTML = list.map((r) => `<p style="font-size:14px;margin:6px 0;"><strong>Run #${r.runSeq ?? "?"}</strong> — <span class="mono">${esc(r.token)}</span> on ${esc(r.chain)} — ${verdictBadge(r.memo)} / ${verdictBadge(r.preflight)}${r.anchorTx ? ` · <a class="mono" href="https://sepolia.etherscan.io/tx/${esc(r.anchorTx)}">anchor</a>` : ""} <span style="color:var(--muted)">· ${esc(r.runAt || "")}</span></p>`).join("");
-  } catch {
-    $("recent-runs-note").textContent = "Live runs are not reachable right now (the demo server may be waking up). The two verified runs below are the record.";
-    $("recent-runs-list").innerHTML = "";
-  }
-}
+      <!-- 2. Try it live -->
+      <section class="section" aria-labelledby="try-it-live-heading">
+        <div class="section-header">
+          <h2 id="try-it-live-heading" class="section-title">Try it live</h2>
+          <p class="section-note">
+            Runs paid Telegraph checks, a honeypot sell simulation, and a DexScreener cross-check, then anchors the execution record on Sepolia and runs the verifier.
+          </p>
+        </div>
 
-$("run-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const token = $("token-input").value.trim();
-  const chain = $("chain-select").value;
-  $("run-error").hidden = true;
-  $("run-result").innerHTML = "";
-  $("run-progress").innerHTML = "";
-  $("run-progress").hidden = true;
-  if (!ADDRESS_RE.test(token)) {
-    showError("That token address is not valid — expected a 0x address with 40 hex characters. Nothing was spent.");
-    return;
-  }
-  const btn = $("run-button");
-  btn.disabled = true;
-  setStatus("Starting a run… this takes about a minute.");
-  try {
-    const result = await runLive(chain, token);
-    renderResult(result);
-    setStatus(`Done — run #${result.runSeq ?? "?"}: Mission 01 ${result.decision.memo}, Mission 14 ${result.decision.preflight}.`);
-    loadRecentRuns();
-  } catch (err) {
-    showError(err && err.message ? err.message : "The run failed.");
-    setStatus("Run failed.");
-  } finally {
-    btn.disabled = false;
-  }
-});
+        <form id="preflight-form" class="preflight-form" novalidate>
+          <div class="field">
+            <label for="token-input" class="field-label">Token contract address</label>
+            <input
+              id="token-input"
+              name="token"
+              type="text"
+              class="input"
+              placeholder="0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+              spellcheck="false"
+              autocomplete="off"
+              autocapitalize="off"
+            />
+          </div>
 
-loadRecentRuns();
-</script>
-</body>
+          <div class="field">
+            <label for="chain-select" class="field-label">Chain</label>
+            <select id="chain-select" name="chain" class="select">
+              <option value="ethereum">Ethereum</option>
+              <option value="polygon">Polygon</option>
+              <option value="arbitrum">Arbitrum</option>
+              <option value="base">Base</option>
+            </select>
+          </div>
+
+          <button id="run-btn" type="submit" class="btn-primary">Run preflight</button>
+        </form>
+
+        <p class="form-hint">
+          Live checks typically take 30 to 60 seconds because each check waits for real Telegraph receipts and a Sepolia anchor confirmation.
+        </p>
+
+        <div id="status-region" aria-live="polite"></div>
+        <div id="result-region"></div>
+      </section>
+
+      <!-- 3. Two real runs -->
+      <section class="section" aria-labelledby="two-real-runs-heading">
+        <div class="section-header">
+          <h2 id="two-real-runs-heading" class="section-title">Two real runs</h2>
+          <p class="section-note">These are real past runs. REJECT is an honest result.</p>
+        </div>
+
+        <article class="run-showcase" aria-labelledby="run-4-title">
+          <div class="run-heading-row">
+            <h3 id="run-4-title" class="run-title">USDC — Run #4</h3>
+            <div class="run-verdicts-inline">
+              <span>Memo <span class="verdict-tag tone-reject">REJECT</span></span>
+              <span>Preflight <span class="verdict-tag tone-reject">REJECT</span></span>
+              <span>Verify <span class="verdict-tag tone-pass">PASS</span></span>
+            </div>
+          </div>
+
+          <ul class="run-findings">
+            <li>Wash volume 81% on the metric pool.</li>
+            <li>Liquidity <span class="mono">$76,761,151.71</span>.</li>
+          </ul>
+
+          <dl class="ledger">
+            <div class="ledger-row">
+              <dt>Record hash</dt>
+              <dd class="mono">
+                <span>0x9c22a405f542afc49d338d1ebb27dfb69a1b7bfa0fd2c639288d3bd0d367141b</span>
+                <button
+                  type="button"
+                  class="copy-btn"
+                  data-copy="0x9c22a405f542afc49d338d1ebb27dfb69a1b7bfa0fd2c639288d3bd0d367141b"
+                >
+                  Copy
+                </button>
+              </dd>
+            </div>
+            <div class="ledger-row">
+              <dt>Anchor transaction</dt>
+              <dd class="mono">
+                <a
+                  href="https://sepolia.etherscan.io/tx/0x37f969d37c9719a23c098c5bc78a7af287348a6c95cd46058241506302d36f15"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >0x37f969d37c9719a23c098c5bc78a7af287348a6c95cd46058241506302d36f15</a>
+              </dd>
+            </div>
+            <div class="ledger-row">
+              <dt>Sepolia block</dt>
+              <dd class="mono">12148744</dd>
+            </div>
+            <div class="ledger-row">
+              <dt>Verifier</dt>
+              <dd><span class="verdict-tag tone-pass">PASS</span></dd>
+            </div>
+          </dl>
+        </article>
+
+        <article class="run-showcase" aria-labelledby="run-5-title">
+          <div class="run-heading-row">
+            <h3 id="run-5-title" class="run-title">HNP — Run #5</h3>
+            <div class="run-verdicts-inline">
+              <span>Memo <span class="verdict-tag tone-reject">REJECT</span></span>
+              <span>Preflight <span class="verdict-tag tone-reject">REJECT</span></span>
+              <span>Verify <span class="verdict-tag tone-pass">PASS</span></span>
+            </div>
+          </div>
+
+          <ul class="run-findings">
+            <li>Honeypot sell simulation failed (<span class="mono">'revert: HP: BUY_FAILED'</span>).</li>
+            <li>Liquidity miner returned a fabricated <span class="mono">$1,182,265,866.03</span> for a token with no DEX market.</li>
+          </ul>
+
+          <dl class="ledger">
+            <div class="ledger-row">
+              <dt>Record hash</dt>
+              <dd class="mono">
+                <span>0x37a2c018e0e2a27cb9f887f42509afffac7f166a6e9172903c07cae6e6d744ed</span>
+                <button
+                  type="button"
+                  class="copy-btn"
+                  data-copy="0x37a2c018e0e2a27cb9f887f42509afffac7f166a6e9172903c07cae6e6d744ed"
+                >
+                  Copy
+                </button>
+              </dd>
+            </div>
+            <div class="ledger-row">
+              <dt>Anchor transaction</dt>
+              <dd class="mono">
+                <a
+                  href="https://sepolia.etherscan.io/tx/0x8f0ab3d37892cf6d1abf42e09503ff50ec2e1a79014dac5221a00b46cb392d98"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >0x8f0ab3d37892cf6d1abf42e09503ff50ec2e1a79014dac5221a00b46cb392d98</a>
+              </dd>
+            </div>
+            <div class="ledger-row">
+              <dt>Sepolia block</dt>
+              <dd class="mono">12148753</dd>
+            </div>
+            <div class="ledger-row">
+              <dt>Verifier</dt>
+              <dd><span class="verdict-tag tone-pass">PASS</span></dd>
+            </div>
+          </dl>
+        </article>
+      </section>
+
+      <!-- 4. Footer -->
+      <footer class="site-footer">
+        <p>Built for the Telegraph Hackathon Season II. Testnet only. Nothing here is financial advice.</p>
+        <a
+          href="https://github.com/Jr-kenny/telegraph-preflight"
+          target="_blank"
+          rel="noopener noreferrer"
+        >github.com/Jr-kenny/telegraph-preflight</a>
+      </footer>
+    </main>
+
+    <script>
+      const API_BASE = 'https://oneshot-demo.onrender.com';
+
+      const PROGRESS_MESSAGES = [
+        'Submitting preflight request…',
+        'Running wash-trading check…',
+        'Running security review check…',
+        'Running liquidity check…',
+        'Running sanctions screening check…',
+        'Running honeypot simulation and DexScreener cross-check…',
+        'Anchoring execution record on Sepolia and running verifier…'
+      ];
+
+      const INTENT_LABELS = {
+        WASH_TRADING_DETECTION_GENERAL: 'Wash trading',
+        SECURITY_REVIEW_GENERAL: 'Security review',
+        LIQUIDITY_DEPTH_VERIFY_GENERAL: 'Liquidity depth',
+        SANCTIONS_SCREENING_MATCH_GENERAL: 'Sanctions screening',
+        HONEYPOT_SELL_SIMULATION: 'Honeypot sell simulation',
+        CODE_REVIEW_GENERAL: 'Contract code review',
+        SOCIAL_BOT_DETECTION_GENERAL: 'Social bot detection',
+        DEXSCREENER_CROSS_CHECK: 'DexScreener cross-check'
+      };
+
+      const form = document.getElementById('preflight-form');
+      const tokenInput = document.getElementById('token-input');
+      const chainSelect = document.getElementById('chain-select');
+      const runBtn = document.getElementById('run-btn');
+      const statusRegion = document.getElementById('status-region');
+      const resultRegion = document.getElementById('result-region');
+
+      let progressTimer = null;
+      let elapsedTimer = null;
+
+      function el(tag, className, text) {
+        const node = document.createElement(tag);
+        if (className) node.className = className;
+        if (text !== undefined && text !== null) node.textContent = String(text);
+        return node;
+      }
+
+      function shortenHash(hash, head = 10, tail = 8) {
+        if (!hash || typeof hash !== 'string') return '—';
+        if (hash.length <= head + tail + 1) return hash;
+        return hash.slice(0, head) + '…' + hash.slice(-tail);
+      }
+
+      function formatUsd(value) {
+        if (typeof value !== 'number' || Number.isNaN(value)) return '—';
+        if (value === 0) return '$0.00';
+        if (value < 0.01) return '$' + value.toFixed(4);
+        return '$' + value.toFixed(2);
+      }
+
+      function toneForVerdict(verdict) {
+        const v = String(verdict || '').trim().toLowerCase();
+        if (v === 'list' || v === 'hold' || v === 'clean' || v === 'pass') return 'tone-pass';
+        if (v === 'review' || v === 'skip') return 'tone-review';
+        if (v === 'reject' || v === 'fail') return 'tone-reject';
+        return 'tone-neutral';
+      }
+
+      function createCopyButton(valueToCopy) {
+        const btn = el('button', 'copy-btn', 'Copy');
+        btn.type = 'button';
+        btn.setAttribute('aria-label', 'Copy full hash');
+        btn.addEventListener('click', () => handleCopy(btn, valueToCopy));
+        return btn;
+      }
+
+      async function handleCopy(btn, text) {
+        try {
+          await navigator.clipboard.writeText(text);
+          const original = btn.textContent;
+          btn.textContent = 'Copied';
+          setTimeout(() => {
+            btn.textContent = original;
+          }, 1500);
+        } catch {
+          btn.textContent = 'Failed';
+          setTimeout(() => {
+            btn.textContent = 'Copy';
+          }, 1500);
+        }
+      }
+
+      document.addEventListener('click', (event) => {
+        const target = event.target;
+        if (target instanceof HTMLButtonElement && target.dataset.copy) {
+          handleCopy(target, target.dataset.copy);
+        }
+      });
+
+      function clearTimers() {
+        if (progressTimer) {
+          clearInterval(progressTimer);
+          progressTimer = null;
+        }
+        if (elapsedTimer) {
+          clearInterval(elapsedTimer);
+          elapsedTimer = null;
+        }
+      }
+
+      function showProgress() {
+        clearTimers();
+        statusRegion.replaceChildren();
+
+        const banner = el('div', 'status-banner status-progress');
+        const msgEl = el('span', '', PROGRESS_MESSAGES[0]);
+        const timerEl = el('span', 'elapsed-timer', '0.0s');
+        banner.append(msgEl, timerEl);
+        statusRegion.appendChild(banner);
+
+        let idx = 0;
+        const startedAt = Date.now();
+
+        progressTimer = setInterval(() => {
+          if (idx < PROGRESS_MESSAGES.length - 1) {
+            idx += 1;
+            msgEl.textContent = PROGRESS_MESSAGES[idx];
+          }
+        }, 4500);
+
+        elapsedTimer = setInterval(() => {
+          const secs = ((Date.now() - startedAt) / 1000).toFixed(1);
+          timerEl.textContent = secs + 's';
+        }, 200);
+      }
+
+      function showError(message) {
+        clearTimers();
+        statusRegion.replaceChildren();
+        const banner = el('div', 'status-banner status-error');
+        banner.setAttribute('role', 'alert');
+        banner.textContent = message;
+        statusRegion.appendChild(banner);
+      }
+
+      function clearStatus() {
+        clearTimers();
+        statusRegion.replaceChildren();
+      }
+
+      function deriveCrossCheckVerdict(crossCheck) {
+        if (!crossCheck) return 'clean';
+        const outcome = String(crossCheck.outcome || '').toLowerCase();
+        if (outcome.includes('reject')) return 'reject';
+        if (
+          outcome.includes('conflict') ||
+          outcome.includes('downgrade') ||
+          outcome.includes('missing') ||
+          outcome.includes('warn') ||
+          outcome.includes('error') ||
+          outcome.includes('review')
+        ) {
+          return 'review';
+        }
+        return 'clean';
+      }
+
+      function formatCrossCheckReason(crossCheck) {
+        if (crossCheck.note) return crossCheck.note;
+        const parts = [];
+        if (crossCheck.outcome) parts.push('Outcome: ' + crossCheck.outcome);
+        if (typeof crossCheck.pair_liquidity_usd === 'number') {
+          parts.push('Pair liquidity $' + crossCheck.pair_liquidity_usd.toLocaleString('en-US', { maximumFractionDigits: 2 }));
+        } else if (typeof crossCheck.dex_max_usd === 'number') {
+          parts.push('DexScreener top pair $' + crossCheck.dex_max_usd.toLocaleString('en-US', { maximumFractionDigits: 2 }));
+        }
+        return parts.join(' — ') || 'DexScreener liquidity comparison completed.';
+      }
+
+      function parseVerifyOutput(outputText) {
+        if (!outputText || typeof outputText !== 'string') return [];
+        const lines = outputText.split(/\r?\n/);
+        const parsed = [];
+        for (const line of lines) {
+          const match = line.match(/^\[(PASS|FAIL|SKIP)\]\s+([^:]+):\s*(.*)$/);
+          if (match) {
+            parsed.push({
+              status: match[1],
+              name: match[2].trim(),
+              detail: match[3].trim()
+            });
+          }
+        }
+        return parsed;
+      }
+
+      function buildLegRow(row) {
+        const tr = document.createElement('tr');
+
+        const tdIntent = document.createElement('td');
+        tdIntent.appendChild(el('span', 'intent-name', row.label));
+        if (row.code) {
+          tdIntent.appendChild(el('span', 'intent-code', row.code));
+        }
+
+        const tdVerdict = document.createElement('td');
+        tdVerdict.appendChild(
+          el('span', 'verdict-tag ' + toneForVerdict(row.verdict), String(row.verdict || 'unknown').toLowerCase())
+        );
+
+        const tdReason = el('td', 'reason-cell', row.reason || '—');
+
+        const tdCost = el('td', 'num mono', row.costText);
+
+        const tdHash = el('td', 'hash-cell mono');
+        if (row.signalHash) {
+          const hashSpan = el('span', '', shortenHash(row.signalHash));
+          hashSpan.title = row.signalHash;
+          tdHash.append(hashSpan, createCopyButton(row.signalHash));
+        } else {
+          tdHash.textContent = '—';
+        }
+
+        const tdReceipt = el('td', '', row.receiptText);
+
+        tr.append(tdIntent, tdVerdict, tdReason, tdCost, tdHash, tdReceipt);
+        return tr;
+      }
+
+      function renderResult(data) {
+        resultRegion.replaceChildren();
+
+        const execution = data.execution || {};
+        const record = execution.record || {};
+        const decision = data.decision || record.decision || {};
+        const memoVerdict = data.memo || decision.memo || 'UNKNOWN';
+        const preflightVerdict = data.preflight || decision.preflight || 'UNKNOWN';
+
+        const container = el('div', 'result-container');
+
+        // 1. Two big verdicts
+        const verdictRow = el('div', 'verdict-row');
+
+        const memoBox = el('div', 'verdict-box ' + toneForVerdict(memoVerdict));
+        memoBox.append(
+          el('span', 'verdict-kind', 'Memo verdict'),
+          el('span', 'verdict-value', memoVerdict)
+        );
+
+        const preflightBox = el('div', 'verdict-box ' + toneForVerdict(preflightVerdict));
+        preflightBox.append(
+          el('span', 'verdict-kind', 'Preflight verdict'),
+          el('span', 'verdict-value', preflightVerdict)
+        );
+
+        verdictRow.append(memoBox, preflightBox);
+        container.appendChild(verdictRow);
+
+        // 2. Run metadata strip
+        const metaStrip = el('div', 'run-meta-strip');
+        const chain = record.chain || data.chain;
+        const token = record.token || data.token;
+        const runSeq = record.run_seq ?? data.run_seq;
+        const totalCost = record.total_cost_usd ?? data.total_cost_usd;
+        const runAt = record.run_at_utc || data.run_at_utc;
+
+        if (runSeq !== undefined && runSeq !== null) {
+          const item = el('span', 'run-meta-item');
+          item.append(el('span', '', 'Run:'), el('span', 'mono', '#' + runSeq));
+          metaStrip.appendChild(item);
+        }
+        if (chain) {
+          const item = el('span', 'run-meta-item');
+          item.append(el('span', '', 'Chain:'), el('span', '', chain));
+          metaStrip.appendChild(item);
+        }
+        if (token) {
+          const item = el('span', 'run-meta-item');
+          item.append(el('span', '', 'Token:'), el('span', 'mono', shortenHash(token, 10, 8)));
+          metaStrip.appendChild(item);
+        }
+        if (typeof totalCost === 'number') {
+          const item = el('span', 'run-meta-item');
+          item.append(el('span', '', 'Total cost:'), el('span', 'mono', formatUsd(totalCost) + ' USDC'));
+          metaStrip.appendChild(item);
+        }
+        if (runAt) {
+          const item = el('span', 'run-meta-item');
+          item.append(el('span', '', 'Timestamp:'), el('span', 'mono', runAt));
+          metaStrip.appendChild(item);
+        }
+        if (metaStrip.childNodes.length > 0) {
+          container.appendChild(metaStrip);
+        }
+
+        // Decision notes if present
+        if (Array.isArray(decision.notes) && decision.notes.length > 0) {
+          const notesList = el('ul', 'decision-notes');
+          for (const note of decision.notes) {
+            notesList.appendChild(el('li', '', note));
+          }
+          container.appendChild(notesList);
+        }
+
+        // 3. Legs + Honeypot + DexScreener cross-check table
+        container.appendChild(el('h3', 'subhead', 'Checks and cross-checks'));
+
+        const tableWrap = el('div', 'table-wrap');
+        const table = el('table', 'legs-table');
+        const thead = document.createElement('thead');
+        const headRow = document.createElement('tr');
+        for (const [label, cls] of [
+          ['Intent', ''],
+          ['Verdict', ''],
+          ['Reason', ''],
+          ['Cost', 'num'],
+          ['Signal hash', ''],
+          ['Receipt', '']
+        ]) {
+          const th = el('th', cls, label);
+          headRow.appendChild(th);
+        }
+        thead.appendChild(headRow);
+        table.appendChild(thead);
+
+        const tbody = document.createElement('tbody');
+        const legs = Array.isArray(record.legs)
+          ? record.legs
+          : Array.isArray(data.legs)
+          ? data.legs
+          : [];
+
+        let sawHoneypot = false;
+        let sawDexScreener = false;
+
+        for (const leg of legs) {
+          const intent = leg.intent || 'UNKNOWN_INTENT';
+          if (intent === 'HONEYPOT_SELL_SIMULATION') sawHoneypot = true;
+
+          const verdict = (leg.judgement && leg.judgement.verdict) || leg.verdict || 'unknown';
+          const reason = (leg.judgement && leg.judgement.reason) || leg.reason || '—';
+
+          let receiptText = '—';
+          if (leg.signal_verified === true) {
+            receiptText = 'Verified';
+          } else if (leg.signal_verified === false) {
+            receiptText = 'Failed';
+          } else if (leg.signal_hash === null || leg.source === 'honeypot.is') {
+            receiptText = 'Free check';
+          } else if (leg.receipt_present === false) {
+            receiptText = 'Missing';
+          }
+
+          tbody.appendChild(
+            buildLegRow({
+              label: INTENT_LABELS[intent] || intent,
+              code: intent,
+              verdict,
+              reason,
+              costText: formatUsd(leg.cost_usd),
+              signalHash: leg.signal_hash || null,
+              receiptText
+            })
+          );
+
+          if (leg.cross_check) {
+            sawDexScreener = true;
+            tbody.appendChild(
+              buildLegRow({
+                label: 'DexScreener cross-check',
+                code: 'DEXSCREENER_CROSS_CHECK',
+                verdict: deriveCrossCheckVerdict(leg.cross_check),
+                reason: formatCrossCheckReason(leg.cross_check),
+                costText: '$0.00',
+                signalHash: null,
+                receiptText: 'Free cross-check'
+              })
+            );
+          }
+        }
+
+        // Handle top-level honeypot or dexscreener objects if API returns them outside legs
+        if (!sawHoneypot && data.honeypot) {
+          const hp = data.honeypot;
+          tbody.appendChild(
+            buildLegRow({
+              label: 'Honeypot sell simulation',
+              code: 'HONEYPOT_SELL_SIMULATION',
+              verdict: (hp.judgement && hp.judgement.verdict) || hp.verdict || 'review',
+              reason: (hp.judgement && hp.judgement.reason) || hp.reason || '—',
+              costText: '$0.00',
+              signalHash: null,
+              receiptText: 'Free check'
+            })
+          );
+        }
+
+        if (!sawDexScreener && (data.dexscreener || data.cross_check)) {
+          const dx = data.dexscreener || data.cross_check;
+          tbody.appendChild(
+            buildLegRow({
+              label: 'DexScreener cross-check',
+              code: 'DEXSCREENER_CROSS_CHECK',
+              verdict: deriveCrossCheckVerdict(dx),
+              reason: formatCrossCheckReason(dx),
+              costText: '$0.00',
+              signalHash: null,
+              receiptText: 'Free cross-check'
+            })
+          );
+        }
+
+        table.appendChild(tbody);
+        tableWrap.appendChild(table);
+        container.appendChild(tableWrap);
+
+        // 4. Execution record hash, anchor tx, and verifier
+        container.appendChild(el('h3', 'subhead', 'Execution proof and verifier'));
+
+        const ledger = el('dl', 'ledger');
+
+        const recordHash = execution.record_hash || data.record_hash;
+        const recordRow = el('div', 'ledger-row');
+        recordRow.appendChild(el('dt', '', 'Execution record hash'));
+        const recordDd = el('dd', 'mono');
+        if (recordHash) {
+          const span = el('span', '', shortenHash(recordHash, 12, 10));
+          span.title = recordHash;
+          recordDd.append(span, createCopyButton(recordHash));
+        } else {
+          recordDd.textContent = '—';
+        }
+        recordRow.appendChild(recordDd);
+        ledger.appendChild(recordRow);
+
+        const anchorTx = execution.anchor_tx_hash || data.anchor_tx_hash;
+        const anchorBlock = execution.anchor_block ?? data.anchor_block;
+        const anchorRow = el('div', 'ledger-row');
+        anchorRow.appendChild(el('dt', '', 'Anchor transaction'));
+        const anchorDd = el('dd', 'mono');
+        if (anchorTx) {
+          const link = el('a', '', shortenHash(anchorTx, 12, 10));
+          link.href = 'https://sepolia.etherscan.io/tx/' + encodeURIComponent(anchorTx);
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          link.title = anchorTx;
+          anchorDd.appendChild(link);
+          if (anchorBlock !== undefined && anchorBlock !== null) {
+            anchorDd.appendChild(el('span', '', ' (block ' + anchorBlock + ')'));
+          }
+          anchorDd.appendChild(createCopyButton(anchorTx));
+        } else {
+          anchorDd.textContent = execution.anchor_note || 'Not anchored';
+        }
+        anchorRow.appendChild(anchorDd);
+        ledger.appendChild(anchorRow);
+
+        const verifyObj = data.verify || {};
+        const verifyPassed = verifyObj.passed === true;
+        const verifyLabel = verifyObj.passed === undefined ? 'UNKNOWN' : verifyPassed ? 'PASS' : 'FAIL';
+
+        const verifyRow = el('div', 'ledger-row');
+        verifyRow.appendChild(el('dt', '', 'Verifier result'));
+        const verifyDd = el('dd');
+        verifyDd.appendChild(el('span', 'verdict-tag ' + toneForVerdict(verifyLabel), verifyLabel));
+        verifyRow.appendChild(verifyDd);
+        ledger.appendChild(verifyRow);
+
+        container.appendChild(ledger);
+
+        const verifyChecks = parseVerifyOutput(verifyObj.output);
+        if (verifyChecks.length > 0) {
+          const checksUl = el('ul', 'verify-checks');
+          for (const chk of verifyChecks) {
+            const li = el('li', 'verify-check-item');
+            li.append(
+              el('span', 'verdict-tag ' + toneForVerdict(chk.status), chk.status),
+              el('span', 'verify-check-name', chk.name),
+              el('span', 'verify-check-msg', chk.detail)
+            );
+            checksUl.appendChild(li);
+          }
+          container.appendChild(checksUl);
+        } else if (verifyObj.output) {
+          const pre = el('pre', 'raw-pre', verifyObj.output);
+          container.appendChild(pre);
+        }
+
+        // Raw JSON disclosure
+        const details = el('details', 'raw-details');
+        details.appendChild(el('summary', '', 'Inspect raw preflight JSON'));
+        details.appendChild(el('pre', 'raw-pre', JSON.stringify(data, null, 2)));
+        container.appendChild(details);
+
+        resultRegion.appendChild(container);
+      }
+
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const token = tokenInput.value.trim();
+        const chain = chainSelect.value;
+
+        if (!token) {
+          showError('Enter a token contract address.');
+          tokenInput.focus();
+          return;
+        }
+
+        if (!/^0x[a-fA-F0-9]{40}$/.test(token)) {
+          showError('Bad input: enter a valid 42-character EVM token address starting with 0x.');
+          tokenInput.focus();
+          return;
+        }
+
+        runBtn.disabled = true;
+        runBtn.textContent = 'Running…';
+        showProgress();
+
+        try {
+          const response = await fetch(`${API_BASE}/api/run`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ chain, token })
+          });
+
+          const rawText = await response.text();
+          let payload = null;
+          try {
+            payload = rawText ? JSON.parse(rawText) : null;
+          } catch {
+            payload = null;
+          }
+
+          if (!response.ok) {
+            const serverMsg =
+              (payload && (payload.error || payload.message || payload.detail)) ||
+              rawText ||
+              `HTTP ${response.status}`;
+
+            if (response.status === 429) {
+              const retryAfter = response.headers.get('Retry-After');
+              const suffix = retryAfter ? ` Try again after ${retryAfter}s.` : ' Wait a moment and try again.';
+              showError(`Rate limited: ${serverMsg}.${suffix}`);
+            } else if (response.status === 400 || response.status === 422) {
+              showError(`Bad input: ${serverMsg}`);
+            } else {
+              showError(`Run failed (${response.status}): ${serverMsg}`);
+            }
+            return;
+          }
+
+          if (!payload || typeof payload !== 'object') {
+            showError('Run failed: server returned an unexpected non-JSON response.');
+            return;
+          }
+
+          clearStatus();
+          renderResult(payload);
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          showError(`Run failed: could not reach ${API_BASE}/api/run (${msg}).`);
+        } finally {
+          runBtn.disabled = false;
+          runBtn.textContent = 'Run preflight';
+        }
+      });
+    </script>
+  </body>
 </html>
