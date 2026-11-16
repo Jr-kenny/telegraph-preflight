@@ -98,7 +98,7 @@ passes.
 ```sh
 npm install
 TELEGRAPH_PRIVATE_KEY=0x... node preflight.js ethereum 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48 \
-  --treasury 0x3E0A40c927a4dA19e6eceCa432adb6ADf36A4046 \
+  --treasury 0x5598196977FB3b9D7E86Ca2495d9e3622A77F38C \
   --pool "WETH/USDC on ethereum"
 ```
 
@@ -118,6 +118,73 @@ Output: a markdown memo printed to stdout, plus
 with every `signal_hash`, cost, duration, and receipt check. The memo shows
 the execution record hash, the anchor transaction (with a Sepolia Etherscan
 link), and the exact verify command.
+
+## Live demo — run it yourself
+
+The demo page ([docs/index.html](docs/index.html)) has a **Try it live**
+section: enter any token address and chain, and it runs a real preflight
+against the demo API — four paid Telegraph checks, the honeypot sell
+simulation, the DexScreener cross-check — then shows the verdict, every
+leg, the execution record hash, the Sepolia anchor transaction, and the
+`verify.js` output. The two verified runs below stay on the page as the
+record; the live section is for running your own.
+
+The page talks to the demo API. The API base is one const at the top of
+the page's script (`API_BASE`): it uses `http://localhost:3000` when the
+page is served locally, and the Render service URL when it is served from
+GitHub Pages. Change that one line when the Render URL is final.
+
+Run the server locally:
+
+```sh
+npm install
+TELEGRAPH_PRIVATE_KEY=0x... npm start   # serves the page + API on :3000
+```
+
+API endpoints:
+
+- `POST /api/run` — `{ chain, token }`. Validates first (bad input → 400,
+  $0 spent). With `Accept: text/event-stream` it streams live progress
+  events (one per leg as it runs) and ends with a `result` event. With a
+  plain JSON request it waits for the run and returns the same result
+  directly. The result is the **full preflight report JSON** — with
+  `execution.record`, `execution.record_hash`,
+  `execution.anchor_tx_hash`, `decision.memo` / `decision.preflight`, and
+  the `legs` (each with its signal hash, cost, and verdict) — plus a
+  `verify` object `{ passed, output }` from `verify.js`. A few convenience
+  aliases are also included at the top level (`runId`, `runSeq`,
+  `recordHash`, `anchorTx`, `anchorBlock`, `totalCostUsd`, `runAt`). The
+  page uses the stream; curl can use either.
+- `GET /api/runs/:id` — one run (status, live progress lines, full result
+  when done). Used if the stream drops.
+- `GET /api/runs` — past runs, newest first (run number, token, chain,
+  verdicts, record hash, anchor tx).
+- `GET /api/health` — `{ ok: true }`.
+
+Rate limits (in-memory): 1 run per visitor per 5 minutes, 20 runs total
+per day, and one run at a time. A limited request gets 429 with a plain
+message. The key is read only from `TELEGRAPH_PRIVATE_KEY` in the
+environment — never from a file, never logged, never returned.
+
+The demo runs with the dedicated **OneShot hackathon wallet**
+(`0x5598196977FB3b9D7E86Ca2495d9e3622A77F38C`, Sepolia testnet only). A
+hackathon gets its own wallet — this one is separate from the routine
+farming wallet, which is never used for the demo. Runs #1–#7 anchored
+from the farming wallet (already on-chain, cannot change); every demo run
+from run #8 on anchors from the hackathon wallet. The key is set as the
+`TELEGRAPH_PRIVATE_KEY` environment variable only, never in the repo and
+never in a file.
+
+Deploy:
+
+- **API (Render):** `render.yaml` is a Blueprint for a free Node web
+  service (`npm install`, `npm start`, health check `/api/health`). In the
+  Render dashboard, connect the repo, create the Blueprint, then set
+  `TELEGRAPH_PRIVATE_KEY` as an environment variable in the dashboard.
+  The key is not in `render.yaml` and must never be committed.
+- **Page (GitHub Pages):** repo Settings → Pages → Source: Deploy from a
+  branch, branch `main`, folder `/docs`. The page then calls the Render
+  API at the URL in `API_BASE`.
 
 ## Demo — two real runs
 
